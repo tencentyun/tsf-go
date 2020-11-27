@@ -40,6 +40,8 @@ log.L().Info(context.Background(), "got message", zap.String("resp",resp))
 3. 可以通过注入环境变量tsf_log_path或者启动参数tsf_log_path来指定日志输出路径
 注意如果不传递go的ctx，会导致日志中不打印traceID
 
+4. 同时需要在tsf日志配置中配置日志类型为:自定义Logback,日志格式为:%d{yyyy-MM-dd HH:mm:ss.SSS} %level %msg%n
+
 ### 分布式配置
 1.import配置模块:`"github.com/tencentyun/tsf-go/pkg/config/tsf"`
 2.初始化配置模块：`if err := tsf.Init(context.Background());err != nil {

@@ -48,23 +48,23 @@ func (b *Builder) Build() logger.Logger {
 		core := zapcore.NewCore(
 			zapcore.NewConsoleEncoder(zapcore.EncoderConfig{
 				// Keys can be anything except the empty string.
-				TimeKey:        "T",
-				LevelKey:       "L",
-				NameKey:        "N",
-				CallerKey:      "C",
+				TimeKey:        "ts",
+				LevelKey:       "level",
+				NameKey:        "logger",
+				CallerKey:      "caller",
 				FunctionKey:    zapcore.OmitKey,
-				MessageKey:     "M",
-				StacktraceKey:  "S",
+				MessageKey:     "msg",
+				StacktraceKey:  "stacktrace",
 				LineEnding:     zapcore.DefaultLineEnding,
 				EncodeLevel:    zapcore.CapitalLevelEncoder,
 				EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.999"),
-				EncodeDuration: zapcore.StringDurationEncoder,
+				EncodeDuration: zapcore.SecondsDurationEncoder,
 				EncodeCaller:   zapcore.ShortCallerEncoder,
 			}),
 			w,
 			level,
 		)
-		zapLogger = zap.New(core, zap.AddCallerSkip(1))
+		zapLogger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 	}
 	return &Logger{zapLogger, level}
 }
@@ -78,20 +78,12 @@ type Logger struct {
 	level zap.AtomicLevel
 }
 
-func addFields(ctx context.Context, fields ...zap.Field) []zap.Field {
-	span := zipkin.SpanFromContext(ctx)
-	if span != nil {
-		fields = append(fields, zap.String("trace_id", span.Context().TraceID.String()))
-	}
-	return fields
-}
-
 func genFields(ctx context.Context, fields ...zap.Field) string {
 	span := zipkin.SpanFromContext(ctx)
 	if span == nil {
 		return ""
 	}
-	return span.Context().TraceID.String() + ",  "
+	return span.Context().TraceID.String() + " "
 }
 
 func (l *Logger) Error(ctx context.Context, msg string, fields ...zap.Field) {

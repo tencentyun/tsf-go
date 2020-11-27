@@ -34,6 +34,7 @@ func newService() {
 }
 
 func (s *Service) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloReply, error) {
+	//注入tsf的用户标签，会传递给下游
 	ctx = meta.WithUser(ctx, meta.UserPair{Key: "user", Value: "test2233"})
 	return s.client.SayHello(ctx, req)
 }

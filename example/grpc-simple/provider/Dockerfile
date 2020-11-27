@@ -10,4 +10,4 @@ ENV workdir /app/
 COPY provider ${workdir}
 WORKDIR ${workdir}
 
-CMD ["./provider"]
+CMD ["sh", "-ec", "exec ${workdir}provider ${JAVA_OPTS}"]
