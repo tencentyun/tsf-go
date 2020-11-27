@@ -1,0 +1,12 @@
+createTime: 2020-11-23T07:32:47Z
+enable: true
+laneId: lane-4y48nmgv
+priority: 1
+remark: ''
+ruleId: lane-r-gvk6z4la
+ruleName: test_longxia
+ruleTagList:
+- {createTime: !!timestamp '2020-11-23T07:32:47Z', laneRuleId: lane-r-gvk6z4la, tagId: lane-t-5yr3en2y,
+  tagName: user, tagOperator: EQUAL, tagValue: test2233, updateTime: !!timestamp '2020-11-23T07:32:47Z'}
+ruleTagRelationship: RELEATION_AND
+updateTime: 2020-11-23T07:32:47Z

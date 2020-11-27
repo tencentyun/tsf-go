@@ -1,0 +1,51 @@
+- action: null
+  appId: '1300555551'
+  enableStatus: false
+  fallbackStatus: false
+  kv: null
+  limit: null
+  microserviceId: ms-dapxlogv
+  microserviceName: provider-demo
+  namespaceId: namespace-n0
+  namespaceName: pepy-cls-docker_default
+  offset: null
+  operator: null
+  orderBy: null
+  orderType: null
+  projectId: null
+  region: null
+  requestId: null
+  routeDesc: ''
+  routeId: route-4y49b2ja
+  routeName: test
+  ruleList:
+  - destList:
+    - destId: route-d-gvkqgnjv
+      destItemList:
+      - {destItemField: TSF_APPLICATION_ID, destItemValue: app-s0, routeDestId: route-d-gvkqgnjv,
+        routeDestItemId: route-d-i-5yrd2x9v}
+      - {destItemField: TSF_GROUP_ID, destItemValue: group-s0, routeDestId: route-d-gvkqgnjv,
+        routeDestItemId: route-d-i-qv3db2na}
+      destWeight: 80
+      routeRuleId: route-r-ba2pbnxv
+    - destId: route-d-2233
+      destItemList:
+      - {destItemField: TSF_APPLICATION_ID, destItemValue: app-s0, routeDestId: route-d-2233,
+        routeDestItemId: route-d-i-5yrd2x9q}
+      - {destItemField: TSF_GROUP_ID, destItemValue: group-s1, routeDestId: route-d-2233,
+        routeDestItemId: route-d-i-qv3db2nh}
+      destWeight: 20
+      routeRuleId: route-r-ba2pbnxv
+    routeId: route-4y49b2ja
+    routeRuleId: route-r-ba2pbnxv
+    routeRuleIndex: 1
+    tagList:
+    - {routeRuleId: route-r-ba2pbnxv, tagField: source.service.name, tagId: route-t-ov6w4zky,
+      tagOperator: EQUAL, tagType: S, tagValue: client-grpc}
+    - {routeRuleId: route-r-9ynlglev, tagField: user, tagId: route-t-zvwk7kwv, tagOperator: EQUAL,
+      tagType: U, tagValue: test2233}
+    - {routeRuleId: route-r-9ynlglev, tagField: source.group.id, tagId: route-t-mae5q5na,
+      tagOperator: EQUAL, tagType: S, tagValue: group-c0}
+  searchWord: null
+  subAccountUin: '120877931'
+  uin: '100011913960'

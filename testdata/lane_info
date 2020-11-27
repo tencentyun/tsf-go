@@ -1,0 +1,9 @@
+createTime: 2020-11-23T07:19:01Z
+laneGroupList:
+- {applicationId: application-gateway, clusterType: C, createTime: !!timestamp '2020-11-23T07:20:40Z',
+  entrance: true, groupId: group-gateway, laneGroupId: lane-g-ov6oen9v, laneId: lane-4y48nmgv,
+  namespaceId: namespace-dap96mgv, updateTime: !!timestamp '2020-11-23T07:20:43Z'}
+- {applicationId: application-p, clusterType: C, createTime: !!timestamp '2020-11-23T07:19:01Z',
+  entrance: false, groupId: group-p0, laneGroupId: lane-g-ba2wm9ja, laneId: lane-4y48nmgv,
+  namespaceId: namespace-dap96mgv, updateTime: !!timestamp '2020-11-23T07:20:44Z'}
+laneId: lane-4y48nmgv

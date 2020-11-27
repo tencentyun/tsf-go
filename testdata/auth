@@ -1,0 +1,22 @@
+- rules:
+  - ruleId: auth-rule-gvk79dyo
+    ruleName: asdasd
+    tags:
+    - tagId: 5736
+      tagType: S
+      tagField: source.service.name
+      tagOperator: EQUAL
+      tagValue: client-grpc
+    - tagId: 5737
+      tagType: S
+      tagField: source.group.id
+      tagOperator: EQUAL
+      tagValue: group-c0
+    - tagId: 5738
+      tagType: U
+      tagField: user
+      tagOperator: EQUAL
+      tagValue: test2233
+    tagProgram: '{5736} AND {5737} AND {5738}'
+  ruleProgram: '{auth-rule-gvk79dyo}'
+  type: B
