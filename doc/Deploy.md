@@ -13,6 +13,7 @@ fi
 nohup ./provider >stdout.log 2>&1 &
 ```
 替换其中的provider为实际的可执行二进制文件名
+
 2. 编写stop.sh:
 ```
 #!/bin/bash
@@ -22,15 +23,19 @@ kill -SIGTERM $pid
 echo "process ${pid} killed"
 ```
 替换其中的provider为实际的可执行二进制文件名
+
 3. 编写cmdline:
 `./provider`
 替换其中的provider为实际的可执行二进制文件名
+
 4. 将可执行二进制文件拷贝进当前目录
-5. 将当前目录打包成tar.gz: tar –czf provider.tar.gz * 
+   
+5. 将当前目录打包成tar.gz: tar –czf provider.tar.gz *
+   
 6. 上传provider.tar.gz并部署
    
 ### 容器部署
-1.编写Dockerfile:
+1. 编写Dockerfile:
 ```
 FROM centos:7
 
@@ -52,7 +57,10 @@ WORKDIR ${workdir}
 CMD ["sh", "-ec", "exec ${workdir}provider ${JAVA_OPTS}"]
 ```
 替换其中的provider为实际的可执行二进制文件名
-2.将编译出的二进制文件放在Dockfile同一目录下
-3.打包镜像docker build . -t ccr.ccs.tencentyun.com/tsf_xxx/provider:1.0
-4.docker push ccr.ccs.tencentyun.com/tsf_xxx/provider:1.0
-5.在tsf上部署镜像
+2. 将编译出的二进制文件放在Dockfile同一目录下
+   
+3. 打包镜像docker build . -t ccr.ccs.tencentyun.com/tsf_xxx/provider:1.0
+   
+4. docker push ccr.ccs.tencentyun.com/tsf_xxx/provider:1.0
+   
+5. 在tsf上部署镜像
