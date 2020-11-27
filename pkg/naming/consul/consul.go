@@ -470,10 +470,11 @@ func (c *Consul) newService(svc naming.Service) *svcInfo {
 	return v
 }
 
-func (c *Consul) Fetch(svc naming.Service) (nodes []naming.Instance) {
+func (c *Consul) Fetch(svc naming.Service) (nodes []naming.Instance, initialized bool) {
 	c.lock.RLock()
 	v, ok := c.discovery[svc]
 	c.lock.RUnlock()
+	initialized = ok
 	if !ok {
 		c.lock.Lock()
 		if v, ok = c.discovery[svc]; !ok {

@@ -58,8 +58,8 @@ func (i Instance) Addr() string {
 
 // Discovery 服务发现
 type Discovery interface {
-	// 根据namespace,service name非阻塞获取服务信息
-	Fetch(svc Service) []Instance
+	// 根据namespace,service name非阻塞获取服务信息，并返回是否初始化过
+	Fetch(svc Service) ([]Instance, bool)
 	// 根据namespace,service name订阅服务信息，直到服务有更新或超时返回(如果超时则success=false)
 	Subscribe(svc Service) Watcher
 	// discovery Scheme

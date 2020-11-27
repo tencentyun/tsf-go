@@ -78,7 +78,7 @@ type Logger struct {
 	level zap.AtomicLevel
 }
 
-func genFields(ctx context.Context, fields ...zap.Field) string {
+func genPrefix(ctx context.Context) string {
 	span := zipkin.SpanFromContext(ctx)
 	if span == nil {
 		return ""
@@ -87,44 +87,44 @@ func genFields(ctx context.Context, fields ...zap.Field) string {
 }
 
 func (l *Logger) Error(ctx context.Context, msg string, fields ...zap.Field) {
-	l.Logger.Error(genFields(ctx)+msg, fields...)
+	l.Logger.Error(genPrefix(ctx)+msg, fields...)
 }
 
 func (l *Logger) Info(ctx context.Context, msg string, fields ...zap.Field) {
 
-	l.Logger.Info(genFields(ctx)+msg, fields...)
+	l.Logger.Info(genPrefix(ctx)+msg, fields...)
 }
 
 func (l *Logger) Debug(ctx context.Context, msg string, fields ...zap.Field) {
-	l.Logger.Debug(genFields(ctx)+msg, fields...)
+	l.Logger.Debug(genPrefix(ctx)+msg, fields...)
 }
 
 func (l *Logger) Warn(ctx context.Context, msg string, fields ...zap.Field) {
-	l.Logger.Warn(genFields(ctx)+msg, fields...)
+	l.Logger.Warn(genPrefix(ctx)+msg, fields...)
 }
 
 func (l *Logger) Fatal(ctx context.Context, msg string, fields ...zap.Field) {
-	l.Logger.Fatal(genFields(ctx)+msg, fields...)
+	l.Logger.Fatal(genPrefix(ctx)+msg, fields...)
 }
 
 func (l *Logger) Errorf(ctx context.Context, msg string, args ...interface{}) {
-	l.Logger.Sugar().Errorf(genFields(ctx)+msg, args...)
+	l.Logger.Sugar().Errorf(genPrefix(ctx)+msg, args...)
 }
 
 func (l *Logger) Infof(ctx context.Context, msg string, args ...interface{}) {
-	l.Logger.Sugar().Infof(genFields(ctx)+msg, args...)
+	l.Logger.Sugar().Infof(genPrefix(ctx)+msg, args...)
 }
 
 func (l *Logger) Debugf(ctx context.Context, msg string, args ...interface{}) {
-	l.Logger.Sugar().Debugf(genFields(ctx)+msg, args...)
+	l.Logger.Sugar().Debugf(genPrefix(ctx)+msg, args...)
 }
 
 func (l *Logger) Warnf(ctx context.Context, msg string, args ...interface{}) {
-	l.Logger.Sugar().Warnf(genFields(ctx)+msg, args...)
+	l.Logger.Sugar().Warnf(genPrefix(ctx)+msg, args...)
 }
 
 func (l *Logger) Fatalf(ctx context.Context, msg string, args ...interface{}) {
-	l.Logger.Sugar().Fatalf(genFields(ctx)+msg, args...)
+	l.Logger.Sugar().Fatalf(genPrefix(ctx)+msg, args...)
 }
 
 func (l *Logger) GetLevel(output ...string) zapcore.Level {
