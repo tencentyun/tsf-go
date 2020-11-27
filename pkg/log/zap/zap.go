@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tencentyun/tsf-go/pkg/internal/env"
 	"github.com/tencentyun/tsf-go/pkg/log/logger"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
 
 	"github.com/natefinch/lumberjack"
 	"github.com/openzipkin/zipkin-go"

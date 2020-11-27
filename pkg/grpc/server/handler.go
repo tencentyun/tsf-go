@@ -11,10 +11,10 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/grpc/status"
 	tsfHttp "github.com/tencentyun/tsf-go/pkg/http"
-	"github.com/tencentyun/tsf-go/pkg/internal/env"
-	"github.com/tencentyun/tsf-go/pkg/internal/monitor"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
+	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 	"github.com/tencentyun/tsf-go/pkg/util"
 
 	"github.com/openzipkin/zipkin-go"

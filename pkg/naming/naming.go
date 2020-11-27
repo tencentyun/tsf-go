@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/tencentyun/tsf-go/pkg/internal/env"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
 )
 
 const (

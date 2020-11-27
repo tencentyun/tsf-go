@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/tencentyun/tsf-go/pkg/errCode"
-	"github.com/tencentyun/tsf-go/pkg/internal/env"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/resolver"

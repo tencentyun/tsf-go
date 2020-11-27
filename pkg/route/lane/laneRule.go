@@ -3,7 +3,7 @@ package lane
 import (
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/internal/tag"
+	"github.com/tencentyun/tsf-go/pkg/sys/tag"
 )
 
 type LaneRule struct {

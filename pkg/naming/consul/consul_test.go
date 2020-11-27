@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/internal/env"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"go.uber.org/zap"
 )
 

@@ -8,11 +8,11 @@ import (
 
 	"github.com/tencentyun/tsf-go/pkg/grpc/balancer/wrr"
 	"github.com/tencentyun/tsf-go/pkg/grpc/resolver"
-	"github.com/tencentyun/tsf-go/pkg/internal/env"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/naming/consul"
 	"github.com/tencentyun/tsf-go/pkg/route/composite"
 	"github.com/tencentyun/tsf-go/pkg/route/lane"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
 
 	"google.golang.org/grpc"

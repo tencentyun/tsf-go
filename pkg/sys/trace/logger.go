@@ -1,7 +1,7 @@
 package trace
 
 import (
-	"github.com/tencentyun/tsf-go/pkg/internal/env"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
 
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"

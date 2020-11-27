@@ -2,7 +2,7 @@ package monitor
 
 import (
 	"github.com/natefinch/lumberjack"
-	"github.com/tencentyun/tsf-go/pkg/internal/env"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

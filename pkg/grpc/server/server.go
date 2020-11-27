@@ -16,13 +16,13 @@ import (
 	cfgConsul "github.com/tencentyun/tsf-go/pkg/config/consul"
 	tgrpc "github.com/tencentyun/tsf-go/pkg/grpc"         // NOTE: open json encoding by set header Content-Type: application/grpc+json
 	"github.com/tencentyun/tsf-go/pkg/grpc/encoding/json" // NOTE: open json encoding by set header Content-Type: application/grpc+json
-	"github.com/tencentyun/tsf-go/pkg/internal/apiMeta"
-	"github.com/tencentyun/tsf-go/pkg/internal/env"
-	"github.com/tencentyun/tsf-go/pkg/internal/trace"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/naming/consul"
 	"github.com/tencentyun/tsf-go/pkg/proxy"
+	"github.com/tencentyun/tsf-go/pkg/sys/apiMeta"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
+	"github.com/tencentyun/tsf-go/pkg/sys/trace"
 	"github.com/tencentyun/tsf-go/pkg/util"
 
 	"github.com/openzipkin/zipkin-go"
