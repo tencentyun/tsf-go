@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"runtime"
 	"strconv"
@@ -45,11 +46,15 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 			} else if meta.IsLinkKey(key) {
 				sysPairs = append(sysPairs, meta.SysPair{Key: key, Value: vals[0]})
 			} else if key == "tsf-metadata" {
-				v := vals[0]
 				var tsfMeta tsfHttp.Metadata
-				err := json.Unmarshal([]byte(v), &tsfMeta)
-				if err != nil {
-					log.L().Info(ctx, "grpc http parse header TSF-Metadata failed!", zap.String("meta", v), zap.Error(err))
+				e := json.Unmarshal([]byte(vals[0]), &tsfMeta)
+				if e != nil {
+					v, e := url.QueryUnescape(vals[0])
+					if err == nil {
+						e = json.Unmarshal([]byte(v), &tsfMeta)
+					} else {
+						log.L().Info(ctx, "grpc http parse header TSF-Metadata failed!", zap.String("meta", v), zap.Error(e))
+					}
 				}
 				sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ApplicationID), Value: tsfMeta.ApplicationID})
 				sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ApplicationVersion), Value: tsfMeta.ApplicationVersion})
@@ -59,9 +64,14 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 				sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.Namespace), Value: tsfMeta.NamespaceID})
 			} else if key == "tsf-tags" {
 				var tags []map[string]interface{} = make([]map[string]interface{}, 0)
-				err = json.Unmarshal([]byte(vals[0]), &tags)
-				if err != nil {
-					log.L().Info(ctx, "grpc http parse header TSF-Tags failed!", zap.String("tags", vals[0]), zap.Error(err))
+				e := json.Unmarshal([]byte(vals[0]), &tags)
+				if e != nil {
+					v, e := url.QueryUnescape(vals[0])
+					if e == nil {
+						e = json.Unmarshal([]byte(v), &tags)
+					} else {
+						log.L().Info(ctx, "grpc http parse header TSF-Tags failed!", zap.String("tags", vals[0]), zap.Error(e))
+					}
 				}
 				for _, tag := range tags {
 					for k, v := range tag {
