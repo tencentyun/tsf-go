@@ -57,10 +57,11 @@ WORKDIR ${workdir}
 CMD ["sh", "-ec", "exec ${workdir}provider ${JAVA_OPTS}"]
 ```
 替换其中的provider为实际的可执行二进制文件名
+
 2. 将编译出的二进制文件放在Dockfile同一目录下
-   
+
 3. 打包镜像docker build . -t ccr.ccs.tencentyun.com/tsf_xxx/provider:1.0
-   
+
 4. docker push ccr.ccs.tencentyun.com/tsf_xxx/provider:1.0
-   
+
 5. 在tsf上部署镜像
