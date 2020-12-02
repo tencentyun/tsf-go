@@ -22,6 +22,7 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/proxy"
 	"github.com/tencentyun/tsf-go/pkg/sys/apiMeta"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
+	"github.com/tencentyun/tsf-go/pkg/sys/metrics"
 	"github.com/tencentyun/tsf-go/pkg/sys/trace"
 	"github.com/tencentyun/tsf-go/pkg/util"
 
@@ -32,7 +33,6 @@ import (
 	_ "google.golang.org/grpc/encoding/gzip" // NOTE: use grpc gzip by header grpc-accept-encoding
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
-
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 )
@@ -115,11 +115,7 @@ func (s *Server) fixConf(conf *Config) *Config {
 		newConf = *conf
 	}
 	if conf.Port == 0 {
-		if env.Port() != 0 {
-			newConf.Port = env.Port()
-		} else {
-			newConf.Port = 8080
-		}
+		newConf.Port = env.Port()
 	}
 	if conf.ServerName == "" {
 		newConf.ServerName = env.ServiceName()
@@ -156,6 +152,8 @@ func (s *Server) Start() error {
 			serveHttp(s.Server, lis)
 		}
 	}()
+	go metrics.StartAgent()
+
 	ip := env.LocalIP()
 	port := s.conf.Port
 	serDesc, err := tgrpc.GetServiceMethods(fmt.Sprintf("%s:%d", ip, port))

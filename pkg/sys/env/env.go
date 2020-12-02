@@ -29,6 +29,10 @@ var (
 	serviceName     string
 	port            int
 	disableGrpcHttp bool
+	gopsPort        int
+	pprofPort       int
+	disableGops     bool
+	disablePprof    bool
 
 	sshUser    string
 	sshHost    string
@@ -146,6 +150,9 @@ func ServiceName() string {
 }
 
 func Port() int {
+	if port == 0 {
+		return 8080
+	}
 	return port
 }
 
@@ -183,6 +190,28 @@ func DisableGrpcHttp() bool {
 	return disableGrpcHttp
 }
 
+func DisableDisableGops() bool {
+	return disableGops
+}
+
+func DisableDisablePprof() bool {
+	return disablePprof
+}
+
+func PprofPort() int {
+	if pprofPort == 0 {
+		return 47077
+	}
+	return pprofPort
+}
+
+func GopsPort() int {
+	if gopsPort == 0 {
+		return 46066
+	}
+	return gopsPort
+}
+
 func init() {
 	flag.IntVar(&logLevel, "tsf_log_level", parseInt(os.Getenv("tsf_log_level")), "-tsf_log_level 0")
 	flag.StringVar(&logPath, "tsf_log_path", os.Getenv("tsf_log_path"), "-tsf_log_path stdout")
@@ -202,6 +231,10 @@ func init() {
 	flag.StringVar(&region, "tsf_service_name", os.Getenv("tsf_service_name"), "-service_name tsf-default-client-grpc")
 	flag.IntVar(&port, "tsf_service_port", parseInt(os.Getenv("tsf_service_port")), "-service_port 8080")
 	flag.BoolVar(&disableGrpcHttp, "tsf_disable_grpc_http", parseBool(os.Getenv("tsf_disable_grpc_http")), "-tsf_disable_grpc_http false")
+	flag.BoolVar(&disableGops, "tsf_disable_gops", parseBool(os.Getenv("tsf_disable_gops")), "-tsf_disable_gops false")
+	flag.BoolVar(&disablePprof, "tsf_disable_pprof", parseBool(os.Getenv("tsf_disable_pprof")), "-tsf_disable_pprof false")
+	flag.IntVar(&pprofPort, "tsf_pprof_port", parseInt(os.Getenv("tsf_pprof_port")), "-tsf_pprof_port 47077")
+	flag.IntVar(&gopsPort, "tsf_gops_port", parseInt(os.Getenv("tsf_gops_port")), "-tsf_gops_port 46066")
 
 	flag.StringVar(&sshUser, "ssh_user", os.Getenv("ssh_user"), "-ssh_user root")
 	flag.StringVar(&sshHost, "ssh_host", os.Getenv("ssh_host"), "-ssh_host 127.0.0.1")
