@@ -130,7 +130,7 @@ func (m *Monitor) dump(old map[string][]*Stat) {
 		metric.Invocation = invocation
 		content, err := json.Marshal(metric)
 		if err != nil {
-			log.L().Error(context.Background(), "Monitor Marshal failed!", zap.Any("metric", metric))
+			log.Error(context.Background(), "Monitor Marshal failed!", zap.Any("metric", metric))
 			return
 		}
 		logger.Info(string(content))

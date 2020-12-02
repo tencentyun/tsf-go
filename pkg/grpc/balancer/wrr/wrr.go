@@ -82,11 +82,11 @@ func (p *Picker) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
 		meta.Sys(info.Ctx, meta.DestKey(meta.ServiceNamespace)).(string),
 		meta.Sys(info.Ctx, meta.DestKey(meta.ServiceName)).(string),
 	)
-	log.L().Debug(info.Ctx, "wrr pick", zap.Any("svc", svc), zap.Any("nodes", p.instances))
+	log.Debug(info.Ctx, "wrr pick", zap.Any("svc", svc), zap.Any("nodes", p.instances))
 
 	nodes := p.r.Select(info.Ctx, svc, p.instances)
 	if len(nodes) == 0 {
-		log.L().Error(info.Ctx, "grpc picker: ErrNoSubConnAvailable!")
+		log.Error(info.Ctx, "grpc picker: ErrNoSubConnAvailable!")
 		return balancer.PickResult{}, balancer.ErrNoSubConnAvailable
 	}
 	node := p.b.Pick(info.Ctx, nodes)

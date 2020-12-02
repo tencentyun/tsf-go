@@ -38,7 +38,7 @@ func L() logger.Logger {
 func getLogger() logger.Logger {
 	if factory == nil {
 		// default logger: uber.go/zap
-		factory = &tsfZap.Builder{}
+		factory = &tsfZap.Builder{CallerSkip: 2}
 	}
 	return factory.Build()
 }

@@ -142,13 +142,13 @@ func (s *Server) Start() error {
 
 	go func() {
 		if env.DisableGrpcHttp() {
-			log.L().Info(context.Background(), "grpc server start serve and listen!", zap.String("name", s.conf.ServerName), zap.Int("port", s.conf.Port))
+			log.Info(context.Background(), "grpc server start serve and listen!", zap.String("name", s.conf.ServerName), zap.Int("port", s.conf.Port))
 			err = s.Serve(lis)
 			if err != nil {
 				panic(err)
 			}
 		} else {
-			log.L().Info(context.Background(), "grpc&http server start serve and listen!", zap.String("name", s.conf.ServerName), zap.Int("port", s.conf.Port))
+			log.Info(context.Background(), "grpc&http server start serve and listen!", zap.String("name", s.conf.ServerName), zap.Int("port", s.conf.Port))
 			serveHttp(s.Server, lis)
 		}
 	}()
@@ -158,14 +158,14 @@ func (s *Server) Start() error {
 	port := s.conf.Port
 	serDesc, err := tgrpc.GetServiceMethods(fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
-		log.L().Errorf(context.Background(), "GetServiceMethods failed", zap.String("addr", fmt.Sprintf("%s:%d", ip, port)), zap.Error(err))
+		log.Errorf(context.Background(), "GetServiceMethods failed", zap.String("addr", fmt.Sprintf("%s:%d", ip, port)), zap.Error(err))
 	}
 	api := apiMeta.GenApiMeta(serDesc)
 	var apiStr string
 	if len(api.Paths) > 0 {
 		apiStr, err = apiMeta.Encode(api)
 		if err != nil {
-			log.L().Error(context.Background(), "[grpc server] encode api failed!", zap.Any("api", api), zap.Error(err))
+			log.Error(context.Background(), "[grpc server] encode api failed!", zap.Any("api", api), zap.Error(err))
 		}
 	}
 	if proxy.Inited() && env.RemoteIP() != "" {
@@ -203,22 +203,22 @@ func (s *Server) Start() error {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGHUP)
 	sig := <-sigs
-	log.L().Info(context.Background(), "[server] got signal,exit now!", zap.String("sig", sig.String()), zap.String("name", s.conf.ServerName))
+	log.Info(context.Background(), "[server] got signal,exit now!", zap.String("sig", sig.String()), zap.String("name", s.conf.ServerName))
 	consul.DefaultConsul().Deregister(&ins)
 	time.Sleep(time.Second)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	go func() {
 		s.GracefulStop()
 		trace.GetReporter().Close()
-		log.L().Sync()
+		log.Sync()
 		cancel()
 	}()
 	<-ctx.Done()
 	if errors.Is(context.DeadlineExceeded, ctx.Err()) {
-		log.L().Error(ctx, "[server] graceful shutdown failed!", zap.String("name", s.conf.ServerName))
+		log.Error(ctx, "[server] graceful shutdown failed!", zap.String("name", s.conf.ServerName))
 		s.Stop()
 	} else {
-		log.L().Info(ctx, "[server] graceful shutdown success!", zap.String("name", s.conf.ServerName))
+		log.Info(ctx, "[server] graceful shutdown success!", zap.String("name", s.conf.ServerName))
 	}
 	return nil
 }

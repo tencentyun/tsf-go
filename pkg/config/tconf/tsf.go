@@ -57,7 +57,7 @@ func (c *Config) Raw() []byte {
 func (c *Config) refill() {
 	err := c.Data.Unmarshal(c.v)
 	if err != nil {
-		log.L().Error(context.Background(), "config refill failed!", zap.Error(err), zap.String("raw", string(c.Raw())))
+		log.Error(context.Background(), "config refill failed!", zap.Error(err), zap.String("raw", string(c.Raw())))
 	}
 }
 
@@ -100,7 +100,7 @@ func refreshGlobal() {
 	for {
 		specs, err := globalWatcher.Watch(ctx)
 		if err != nil {
-			log.L().Error(ctx, "refreshGlobal Watch failed!", zap.Error(err))
+			log.Error(ctx, "refreshGlobal Watch failed!", zap.Error(err))
 			return
 		}
 		var conf *Config
@@ -124,7 +124,7 @@ func refreshApp() {
 	for {
 		specs, err := appWatcher.Watch(ctx)
 		if err != nil {
-			log.L().Error(ctx, "refreshApp Watch failed!", zap.Error(err))
+			log.Error(ctx, "refreshApp Watch failed!", zap.Error(err))
 			return
 		}
 		var conf *Config

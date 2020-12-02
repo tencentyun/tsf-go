@@ -53,7 +53,7 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 					if err == nil {
 						e = json.Unmarshal([]byte(v), &tsfMeta)
 					} else {
-						log.L().Info(ctx, "grpc http parse header TSF-Metadata failed!", zap.String("meta", v), zap.Error(e))
+						log.Info(ctx, "grpc http parse header TSF-Metadata failed!", zap.String("meta", v), zap.Error(e))
 					}
 				}
 				sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ApplicationID), Value: tsfMeta.ApplicationID})
@@ -70,7 +70,7 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 					if e == nil {
 						e = json.Unmarshal([]byte(v), &tags)
 					} else {
-						log.L().Info(ctx, "grpc http parse header TSF-Tags failed!", zap.String("tags", vals[0]), zap.Error(e))
+						log.Info(ctx, "grpc http parse header TSF-Tags failed!", zap.String("tags", vals[0]), zap.Error(e))
 					}
 				}
 				for _, tag := range tags {
@@ -115,7 +115,7 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 			buf = buf[:rs]
 			pl := fmt.Sprintf("grpc server panic: %v\n%v\n%s\n", req, rerr, buf)
 			fmt.Fprintf(os.Stderr, pl)
-			log.L().Error(ctx, pl)
+			log.Error(ctx, pl)
 			err = errCode.Internal
 		}
 

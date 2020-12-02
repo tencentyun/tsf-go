@@ -20,7 +20,7 @@ func GetServiceMethods(addr string) (serDesc map[string]*apiMeta.Service, err er
 	defer cancel()
 	conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.L().Fatal(ctx, "dail grpc server failed,process exit now!", zap.String("addr", addr), zap.Error(err))
+		log.Fatal(ctx, "dail grpc server failed,process exit now!", zap.String("addr", addr), zap.Error(err))
 	}
 	cli := rpb.NewServerReflectionClient(conn)
 	refClient := grpcreflect.NewClient(ctx, cli)
@@ -36,7 +36,7 @@ func GetServiceMethods(addr string) (serDesc map[string]*apiMeta.Service, err er
 		}
 		desc, err := reflSource.FindSymbol(service)
 		if err != nil {
-			log.L().Error(ctx, "FindSymbol failed!", zap.String("symbol", service), zap.Error(err))
+			log.Error(ctx, "FindSymbol failed!", zap.String("symbol", service), zap.Error(err))
 			continue
 		}
 		for _, s := range desc.GetFile().GetServices() {

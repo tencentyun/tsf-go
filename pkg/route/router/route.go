@@ -87,14 +87,14 @@ func (r *Router) Select(ctx context.Context, svc naming.Service, nodes []naming.
 	for _, rule := range ruleGroup.RuleList {
 		t := rule.toCommonTagRule()
 		if t.Hit(ctx) {
-			log.L().Debug(ctx, "[route]: hit rule", zap.Any("svc", svc), zap.Any("rule", rule))
+			log.Debug(ctx, "[route]: hit rule", zap.Any("svc", svc), zap.Any("rule", rule))
 			hit = true
 			selects = r.matchByRule(rule, nodes)
 			if len(selects) != 0 {
 				break
 			}
 		} else {
-			log.L().Debug(ctx, "[route]: not hit rule", zap.Any("svc", svc), zap.Any("rule", rule))
+			log.Debug(ctx, "[route]: not hit rule", zap.Any("svc", svc), zap.Any("rule", rule))
 		}
 	}
 	if !hit {
@@ -148,10 +148,10 @@ func (r *Router) refresh() {
 		specs, err := r.watcher.Watch(r.ctx)
 		if err != nil {
 			if errCode.Deadline.Equal(err) || errCode.ClientClosed.Equal(err) {
-				log.L().Error(context.Background(), "watch route config deadline or clsoe!exit now!", zap.Error(err))
+				log.Error(context.Background(), "watch route config deadline or clsoe!exit now!", zap.Error(err))
 				return
 			}
-			log.L().Error(context.Background(), "watch route config failed!", zap.Error(err))
+			log.Error(context.Background(), "watch route config failed!", zap.Error(err))
 			continue
 		}
 		services := make(map[naming.Service]RuleGroup)
@@ -159,7 +159,7 @@ func (r *Router) refresh() {
 			var ruleGroup []RuleGroup
 			err = spec.Data.Unmarshal(&ruleGroup)
 			if err != nil || len(ruleGroup) == 0 {
-				log.L().Error(context.Background(), "unmarshal route config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
+				log.Error(context.Background(), "unmarshal route config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
 				continue
 			}
 			svc := naming.NewService(ruleGroup[0].NamespaceId, ruleGroup[0].MicroserviceName)
@@ -170,7 +170,7 @@ func (r *Router) refresh() {
 			}
 		}
 		if len(services) == 0 && err != nil {
-			log.L().Error(context.Background(), "get route config failed,not override old data!")
+			log.Error(context.Background(), "get route config failed,not override old data!")
 			continue
 		}
 		r.services.Store(services)

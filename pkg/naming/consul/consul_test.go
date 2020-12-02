@@ -57,13 +57,13 @@ func TestConsul(t *testing.T) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGHUP)
 	sig := <-sigs
-	log.L().Info(ctx, "[server] got signal,exit now!", zap.String("sig", sig.String()))
+	log.Info(ctx, "[server] got signal,exit now!", zap.String("sig", sig.String()))
 	cancel()
 	for i := 0; i < count; i++ {
 		<-ch
 	}
 	time.Sleep(time.Millisecond * 800)
-	log.L().Info(ctx, "clear success!")
+	log.Info(ctx, "clear success!")
 	return
 }
 

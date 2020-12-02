@@ -13,7 +13,7 @@ func StartAgent() {
 	if !env.DisableDisableGops() {
 		addr := fmt.Sprintf(":%d", env.GopsPort())
 		if err := agent.Listen(agent.Options{Addr: addr}); err != nil {
-			log.L().Errorf(context.Background(), "gops agent.Listen %s err: %v", addr, err)
+			log.Errorf(context.Background(), "gops agent.Listen %s err: %v", addr, err)
 		}
 	}
 }

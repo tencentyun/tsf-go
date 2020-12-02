@@ -112,7 +112,7 @@ func (c *Consul) fetch(path string, index int64) (res []config.Spec, consulIndex
 	}
 	defer func() {
 		if err != nil {
-			log.L().Error(context.Background(), "[config] get config failed!", zap.String("url", url), zap.Error(err))
+			log.Error(context.Background(), "[config] get config failed!", zap.String("url", url), zap.Error(err))
 		}
 	}()
 
@@ -145,7 +145,7 @@ func (c *Consul) fetch(path string, index int64) (res []config.Spec, consulIndex
 	for _, item := range items {
 		b, err := base64.StdEncoding.DecodeString(item.Value)
 		if err != nil {
-			log.L().Error(context.Background(), "[config] fetch failed!", zap.String("url", url), zap.String("key", item.Key), zap.String("value", item.Value), zap.Error(err))
+			log.Error(context.Background(), "[config] fetch failed!", zap.String("url", url), zap.String("key", item.Key), zap.String("value", item.Value), zap.Error(err))
 			continue
 		}
 		res = append(res, config.Spec{Key: item.Key, Data: raw(b)})

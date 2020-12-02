@@ -100,7 +100,7 @@ func (l *Lane) Select(ctx context.Context, svc naming.Service, nodes []naming.In
 	lane, ok := l.allLanes[laneID]
 	if !ok {
 		l.mu.RUnlock()
-		log.L().Error(ctx, "[lane.Select] no lane info found in allLanes!", zap.String("laneID", laneID))
+		log.Error(ctx, "[lane.Select] no lane info found in allLanes!", zap.String("laneID", laneID))
 		return nodes
 	}
 	serviceHit := l.services[laneID]
@@ -148,7 +148,7 @@ func (l *Lane) selectColor(ctx context.Context, nodes []naming.Instance, lane La
 			}
 		}
 	}
-	log.L().Debug(ctx, "lane take effect, choose color instance!", zap.Any("color_nodes", colors))
+	log.Debug(ctx, "lane take effect, choose color instance!", zap.Any("color_nodes", colors))
 	return colors
 }
 
@@ -174,7 +174,7 @@ func (l *Lane) selectNormal(ctx context.Context, svc naming.Service, nodes []nam
 		normal = append(normal, node)
 	}
 	if len(color) > 0 {
-		log.L().Debug(ctx, "lane take effect, filter color instance!", zap.Any("color_nodes", color))
+		log.Debug(ctx, "lane take effect, filter color instance!", zap.Any("color_nodes", color))
 	}
 	return normal
 }
@@ -184,10 +184,10 @@ func (l *Lane) refreshAllRule() {
 		specs, err := l.ruleWatcher.Watch(l.ctx)
 		if err != nil {
 			if errCode.Deadline.Equal(err) || errCode.ClientClosed.Equal(err) {
-				log.L().Error(context.Background(), "watch lane config deadline or clsoe!exit now!", zap.Error(err))
+				log.Error(context.Background(), "watch lane config deadline or clsoe!exit now!", zap.Error(err))
 				return
 			}
-			log.L().Error(context.Background(), "watch lane config failed!", zap.Error(err))
+			log.Error(context.Background(), "watch lane config failed!", zap.Error(err))
 			continue
 		}
 		var allRules []LaneRule
@@ -195,13 +195,13 @@ func (l *Lane) refreshAllRule() {
 			var rule LaneRule
 			err = spec.Data.Unmarshal(&rule)
 			if err != nil {
-				log.L().Error(context.Background(), "unmarshal lane config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
+				log.Error(context.Background(), "unmarshal lane config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
 				continue
 			}
 			allRules = append(allRules, rule)
 		}
 		if len(allRules) == 0 && err != nil {
-			log.L().Error(context.Background(), "get lane config failed,not override old data!")
+			log.Error(context.Background(), "get lane config failed,not override old data!")
 			continue
 		}
 		l.mu.Lock()
@@ -217,10 +217,10 @@ func (l *Lane) refreshAllLane() {
 		specs, err := l.laneWathcer.Watch(l.ctx)
 		if err != nil {
 			if errCode.Deadline.Equal(err) || errCode.ClientClosed.Equal(err) {
-				log.L().Error(context.Background(), "watch lane config deadline or clsoe!exit now!", zap.Error(err))
+				log.Error(context.Background(), "watch lane config deadline or clsoe!exit now!", zap.Error(err))
 				return
 			}
-			log.L().Error(context.Background(), "watch lane config failed!", zap.Error(err))
+			log.Error(context.Background(), "watch lane config failed!", zap.Error(err))
 			time.Sleep(time.Second)
 			continue
 		}
@@ -229,7 +229,7 @@ func (l *Lane) refreshAllLane() {
 			var lane LaneInfo
 			err = spec.Data.Unmarshal(&lane)
 			if err != nil {
-				log.L().Error(context.Background(), "unmarshal lane config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
+				log.Error(context.Background(), "unmarshal lane config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
 				time.Sleep(time.Second)
 				continue
 			}

@@ -54,12 +54,12 @@ func (a *Authenticator) Verify(ctx context.Context, method string) error {
 			if authConfig.Type == "W" {
 				return nil
 			}
-			log.L().Debug(ctx, "Authenticator.Verify hit blacklist,access blocked!", zap.Any("rule", rule.tagRule))
+			log.Debug(ctx, "Authenticator.Verify hit blacklist,access blocked!", zap.Any("rule", rule.tagRule))
 			return errCode.Forbidden
 		}
 	}
 	if authConfig.Type == "W" {
-		log.L().Debug(ctx, "Authenticator.Verify not hit whitelist,access blocked!")
+		log.Debug(ctx, "Authenticator.Verify not hit whitelist,access blocked!")
 		return errCode.Forbidden
 	}
 	return nil
@@ -70,27 +70,27 @@ func (a *Authenticator) refreshRule() {
 		specs, err := a.watcher.Watch(a.ctx)
 		if err != nil {
 			if errCode.Deadline.Equal(err) || errCode.ClientClosed.Equal(err) {
-				log.L().Error(context.Background(), "watch auth config deadline or clsoe!exit now!", zap.Error(err))
+				log.Error(context.Background(), "watch auth config deadline or clsoe!exit now!", zap.Error(err))
 				return
 			}
-			log.L().Error(context.Background(), "watch auth config failed!", zap.Error(err))
+			log.Error(context.Background(), "watch auth config failed!", zap.Error(err))
 			continue
 		}
 		var authConfigs []AuthConfig
 		for _, spec := range specs {
 			if spec.Key != fmt.Sprintf("authority/%s/%s/data", a.svc.Namespace, a.svc.Name) {
 				err = fmt.Errorf("found invalid auth config key!")
-				log.L().Error(context.Background(), "found invalid auth config key!", zap.String("key", spec.Key), zap.String("expect", fmt.Sprintf("authority/%s/%s/data", a.svc.Namespace, a.svc.Name)))
+				log.Error(context.Background(), "found invalid auth config key!", zap.String("key", spec.Key), zap.String("expect", fmt.Sprintf("authority/%s/%s/data", a.svc.Namespace, a.svc.Name)))
 				continue
 			}
 			err = spec.Data.Unmarshal(&authConfigs)
 			if err != nil {
-				log.L().Error(context.Background(), "unmarshal auth config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
+				log.Error(context.Background(), "unmarshal auth config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
 				continue
 			}
 		}
 		if len(authConfigs) == 0 && err != nil {
-			log.L().Error(context.Background(), "get auth config failed,not override old data!")
+			log.Error(context.Background(), "get auth config failed,not override old data!")
 			continue
 		}
 		var authConfig *AuthConfig

@@ -35,10 +35,10 @@ func (t Tag) Hit(ctx context.Context) bool {
 	var v interface{}
 	if t.Type == TypeSys {
 		v = meta.Sys(ctx, t.Field)
-		log.L().Debug(ctx, "hit sys:", zap.String("field", t.Field), zap.Any("value", v))
+		log.Debug(ctx, "hit sys:", zap.String("field", t.Field), zap.Any("value", v))
 	} else {
 		v = meta.User(ctx, t.Field)
-		log.L().Debug(ctx, "hit user:", zap.String("field", t.Field), zap.Any("value", v))
+		log.Debug(ctx, "hit user:", zap.String("field", t.Field), zap.Any("value", v))
 	}
 	if v == nil {
 		return false

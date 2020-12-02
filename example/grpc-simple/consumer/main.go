@@ -36,7 +36,7 @@ func doWork() {
 			panic(err)
 		}
 		cancel()
-		log.L().Infof(context.Background(), "got resp: %v", resp)
+		log.Infof(context.Background(), "got resp: %v", resp)
 		fmt.Println("resp:", resp, err)
 		time.Sleep(time.Second * 2)
 	}

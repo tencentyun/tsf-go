@@ -21,7 +21,7 @@ func main() {
 	server.Use(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		start := time.Now()
 		resp, err = handler(ctx, req)
-		log.L().Info(ctx, "enter grpc handler!", zap.String("method", info.FullMethod), zap.Duration("dur", time.Since(start)))
+		log.Info(ctx, "enter grpc handler!", zap.String("method", info.FullMethod), zap.Duration("dur", time.Since(start)))
 		return
 	})
 

@@ -235,7 +235,7 @@ func (c *Consul) catalog(index int64) (services map[string]interface{}, consulIn
 	}
 	defer func() {
 		if err != nil {
-			log.L().Error(context.Background(), "[naming] get catalog failed!", zap.String("url", url), zap.Error(err))
+			log.Error(context.Background(), "[naming] get catalog failed!", zap.String("url", url), zap.Error(err))
 		}
 	}()
 	var header xhttp.Header
@@ -282,7 +282,7 @@ func (c *Consul) healthService(svc naming.Service, index int64) (nodes []CheckSe
 	}
 	defer func() {
 		if err != nil {
-			log.L().Error(context.Background(), "[naming] get healthService failed!", zap.String("name", svc.Name), zap.String("url", url), zap.Error(err))
+			log.Error(context.Background(), "[naming] get healthService failed!", zap.String("name", svc.Name), zap.String("url", url), zap.Error(err))
 		}
 	}()
 	var header xhttp.Header
@@ -330,9 +330,9 @@ func (c *Consul) register(ins *naming.Instance) (err error) {
 	}
 	err = c.setCli.Put(url, sd, nil)
 	if err != nil {
-		log.L().Error(context.Background(), "[naming] register instance to consul failed!", zap.Any("instance", sd), zap.String("url", url), zap.Error(err))
+		log.Error(context.Background(), "[naming] register instance to consul failed!", zap.Any("instance", sd), zap.String("url", url), zap.Error(err))
 	} else {
-		log.L().Info(context.Background(), "[naming] register instance to consul success!", zap.Any("instance", sd), zap.String("url", url))
+		log.Info(context.Background(), "[naming] register instance to consul success!", zap.Any("instance", sd), zap.String("url", url))
 	}
 	return
 }
@@ -347,7 +347,7 @@ func (c *Consul) heartBeat(ins *naming.Instance) (err error) {
 	}
 	err = c.setCli.Put(url, nil, nil)
 	if err != nil {
-		log.L().Error(context.Background(), "[naming] send heartbeat to consul failed!", zap.String("id", ins.ID), zap.String("url", url), zap.Error(err))
+		log.Error(context.Background(), "[naming] send heartbeat to consul failed!", zap.String("id", ins.ID), zap.String("url", url), zap.Error(err))
 	}
 	return
 }
@@ -362,7 +362,7 @@ func (c *Consul) deregister(ins *naming.Instance) (err error) {
 	}
 	err = c.setCli.Put(url, nil, nil)
 	if err != nil {
-		log.L().Error(context.Background(), "[naming] deregister ins to consul failed!", zap.String("id", ins.ID), zap.String("url", url), zap.Error(err))
+		log.Error(context.Background(), "[naming] deregister ins to consul failed!", zap.String("id", ins.ID), zap.String("url", url), zap.Error(err))
 	}
 	return
 }
@@ -409,7 +409,7 @@ func (c *Consul) Register(ins *naming.Instance) (err error) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.L().Debug(ctx, "[naming] recevie exit signal,quit register!", zap.String("id", ins.ID), zap.String("name", ins.Service.Name))
+				log.Debug(ctx, "[naming] recevie exit signal,quit register!", zap.String("id", ins.ID), zap.String("name", ins.Service.Name))
 				return
 			case <-timer.C:
 				err = c.heartBeat(ins)
@@ -434,7 +434,7 @@ func (c *Consul) Register(ins *naming.Instance) (err error) {
 }
 
 func (c *Consul) Deregister(ins *naming.Instance) (err error) {
-	log.L().Info(context.Background(), "deregister service!", zap.String("svc", ins.Service.Name))
+	log.Info(context.Background(), "deregister service!", zap.String("svc", ins.Service.Name))
 	c.lock.RLock()
 	v, ok := c.registry[ins.ID]
 	c.lock.RUnlock()

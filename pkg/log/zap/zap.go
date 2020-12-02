@@ -19,6 +19,7 @@ var (
 )
 
 type Builder struct {
+	CallerSkip int
 }
 
 func (b *Builder) Build() logger.Logger {
@@ -34,7 +35,7 @@ func (b *Builder) Build() logger.Logger {
 			OutputPaths:      []string{"stderr"},
 			ErrorOutputPaths: []string{"stderr"},
 		}
-		zapLogger, err = config.Build(zap.AddCallerSkip(1))
+		zapLogger, err = config.Build(zap.AddCallerSkip(b.CallerSkip))
 		if err != nil {
 			panic(fmt.Errorf("logger build failed!err:=%v", err))
 		}
@@ -64,7 +65,7 @@ func (b *Builder) Build() logger.Logger {
 			w,
 			level,
 		)
-		zapLogger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+		zapLogger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(b.CallerSkip))
 	}
 	return &Logger{zapLogger, level}
 }
