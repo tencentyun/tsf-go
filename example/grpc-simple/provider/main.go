@@ -6,7 +6,6 @@ import (
 
 	"github.com/tencentyun/tsf-go/pkg/grpc/server"
 	"github.com/tencentyun/tsf-go/pkg/log"
-	"github.com/tencentyun/tsf-go/pkg/proxy"
 	"github.com/tencentyun/tsf-go/pkg/util"
 	pb "github.com/tencentyun/tsf-go/testdata"
 
@@ -16,7 +15,6 @@ import (
 
 func main() {
 	util.ParseFlag()
-	proxy.Init()
 
 	server := server.NewServer(&server.Config{ServerName: "provider-demo"})
 	pb.RegisterGreeterServer(server.Server, &Service{})
