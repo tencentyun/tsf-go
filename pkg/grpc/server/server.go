@@ -134,6 +134,8 @@ func (s *Server) Use(interceptors ...grpc.UnaryServerInterceptor) *Server {
 // Start create a tcp listener and start goroutine for serving each incoming request.
 // Start will block until term signal is received.
 func (s *Server) Start() error {
+	metrics.StartAgent()
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", int64(s.conf.Port)))
 	if err != nil {
 		return err
@@ -152,7 +154,6 @@ func (s *Server) Start() error {
 			serveHttp(s.Server, lis)
 		}
 	}()
-	go metrics.StartAgent()
 
 	ip := env.LocalIP()
 	port := s.conf.Port
