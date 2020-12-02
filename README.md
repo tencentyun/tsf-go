@@ -1,2 +1,2 @@
 tsf-go
-tsf-go is tsf framework for golang
+tsf-go is TSF framework SDK for golang
