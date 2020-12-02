@@ -15,7 +15,7 @@ protoc --go_out=plugins=grpc:. *.proto
 #### 3. 修改启动入口代码
 ```
 server := server.NewServer(&server.Config{ServerName: "provider-demo"})
-pb.RegisterGreeterServer(server.Server, &Service{})
+pb.RegisterGreeterServer(server.GrpcServer(), &Service{})
 err := server.Start()
 if err != nil {
 	panic(err)
@@ -24,9 +24,9 @@ if err != nil {
 需将代码中`provider-demo`替换成实际的gRPC serviceName
 如果配置文件中不指定端口则默认为8080，也可以通过tsf_service_port环境或者启动参数来指定，其他的可指定的配置参考`pkg/sys/env/env.go`中定义的Key
 
-> 通过TSF启动的gRPC server同时支持http1.1和json（可以被Spring Cloud服务调用），此时http的path为：/<package_name.service_name>/<method\>
-比如：curl -X POST --data '{"name":"grpc world"}' 127.0.0.1:8080/tsf.test.helloworld.Greeter/SayHello
-如果想要禁用这个feature可以通过注入环境变量或启动参数：tsf_disable_grpc_http=true 来关闭
+> 通过TSF启动的gRPC server除了gRPC协议同时还支持http1.1+json（可以被Spring Cloud服务调用），此时http的path为：/<package_name.service_name>/<method\>
+比如：curl -v -X POST --data '{"name":"grpc world"}' 127.0.0.1:8080/tsf.test.helloworld.Greeter/SayHello
+想要禁用这个feature可以注入环境变量或启动参数：tsf_disable_grpc_http=true
 
 ## Client端接入
 
@@ -44,7 +44,7 @@ cc, err := client.DialWithBlock(ctx, "consul://local/provider-demo")
 if err != nil {
 	panic(err)
 }
-greeter := pb.NewGreeterClient(cc.ClientConn)
+greeter := pb.NewGreeterClient(cc.GrpcConn())
 ```
 需将`tsf.provider-demo`需要替换成实际被访问的服务提供者的serviceName
 `local`的含义是访问本地命名空间的服务,如果需要发现全局命名空间服务需要替换成`global`

@@ -27,7 +27,7 @@ func doWork() {
 	}
 
 	// get client stub
-	greeter := pb.NewGreeterClient(cc.ClientConn)
+	greeter := pb.NewGreeterClient(cc.GrpcConn())
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 		ctx = meta.WithUser(ctx, meta.UserPair{"user", "test2233"})

@@ -17,7 +17,7 @@ func main() {
 	util.ParseFlag()
 
 	server := server.NewServer(&server.Config{ServerName: "provider-demo"})
-	pb.RegisterGreeterServer(server.Server, &Service{})
+	pb.RegisterGreeterServer(server.GrpcServer(), &Service{})
 	server.Use(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		start := time.Now()
 		resp, err = handler(ctx, req)

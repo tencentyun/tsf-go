@@ -11,7 +11,7 @@ require (
 	github.com/jhump/protoreflect v1.7.1
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/longXboy/go-grpc-http1 v0.0.0-20201126144114-233eec9fe038
+	github.com/longXboy/go-grpc-http1 v0.0.0-20201202084506-0a6dbcb9e0f7
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible

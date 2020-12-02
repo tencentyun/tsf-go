@@ -119,3 +119,7 @@ func (c *ClientConn) chainUnaryClient() grpc.UnaryClientInterceptor {
 		return chainedInvoker(ctx, method, req, reply, cc, opts...)
 	}
 }
+
+func (c *ClientConn) GrpcConn() *grpc.ClientConn {
+	return c.ClientConn
+}

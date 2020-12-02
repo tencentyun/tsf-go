@@ -30,10 +30,14 @@ import (
 	"go.uber.org/zap"
 	grpc "google.golang.org/grpc"
 	_ "google.golang.org/grpc/encoding/gzip" // NOTE: use grpc gzip by header grpc-accept-encoding
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
+
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 )
 
+// Config 是gRPC server的配置
 type Config struct {
 	// 服务名称，命名空间内唯一的调用标识
 	ServerName string
@@ -45,6 +49,8 @@ type Config struct {
 // Create an instance of Server, by using NewServer().
 type Server struct {
 	*grpc.Server
+	healthService *health.Server
+
 	conf   *Config
 	authen auth.Auth
 	tracer *zipkin.Tracer
@@ -60,6 +66,7 @@ func NewServer(conf *Config, o ...grpc.ServerOption) (s *Server) {
 
 	json.Init()
 	util.ParseFlag()
+
 	s = &Server{conf: s.fixConf(conf)}
 
 	// create our local service endpoint
@@ -94,6 +101,11 @@ func NewServer(conf *Config, o ...grpc.ServerOption) (s *Server) {
 	builder := &authenticator.Builder{}
 	s.authen = builder.Build(cfgConsul.DefaultConsul(), naming.NewService(env.NamespaceID(), conf.ServerName))
 	s.Use(s.handle)
+
+	// register default health check service
+	healthService := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s.Server, healthService)
+	s.healthService = healthService
 	return
 }
 
@@ -142,10 +154,6 @@ func (s *Server) Start() error {
 		} else {
 			log.L().Info(context.Background(), "grpc&http server start serve and listen!", zap.String("name", s.conf.ServerName), zap.Int("port", s.conf.Port))
 			serveHttp(s.Server, lis)
-			/*err = s.Serve(lis)
-			if err != nil {
-				panic(err)
-			}*/
 		}
 	}()
 	ip := env.LocalIP()
@@ -204,6 +212,7 @@ func (s *Server) Start() error {
 	go func() {
 		s.GracefulStop()
 		trace.GetReporter().Close()
+		log.L().Sync()
 		cancel()
 	}()
 	<-ctx.Done()
@@ -236,4 +245,12 @@ func (s *Server) chainUnaryInterceptors() grpc.UnaryServerInterceptor {
 
 		return chainedHandler(ctx, req)
 	}
+}
+
+func (s *Server) GrpcServer() *grpc.Server {
+	return s.Server
+}
+
+func (s *Server) HealthService() *health.Server {
+	return s.healthService
 }
