@@ -100,6 +100,7 @@ func (a *Authenticator) refreshRule() {
 				rule.genTagRules()
 			}
 		}
+		log.Infof(context.Background(), "[auth] found new auth rules,replace now!config: %v", authConfig)
 		a.mu.Lock()
 		a.authConfig = authConfig
 		a.mu.Unlock()

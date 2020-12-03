@@ -174,7 +174,7 @@ func (r *Router) refresh() {
 			log.Error(context.Background(), "get route config failed,not override old data!")
 			continue
 		}
-		log.Info(context.Background(), "[route] found new route,replace now!", zap.Any("services", services))
+		log.Infof(context.Background(), "[route] found new route,replace now! services: %v", services)
 		r.services.Store(services)
 	}
 }

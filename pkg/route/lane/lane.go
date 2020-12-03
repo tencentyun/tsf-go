@@ -204,7 +204,7 @@ func (l *Lane) refreshAllRule() {
 			log.Error(context.Background(), "get lane rule config failed,not override old data!")
 			continue
 		}
-		log.Info(context.Background(), "[lane] found new lane rule,replace now!", zap.Any("rules", allRules))
+		log.Infof(context.Background(), "[lane] found new lane rule,replace now!rules: %v", allRules)
 		l.mu.Lock()
 		l.allRules = allRules
 		l.mu.Unlock()
@@ -240,7 +240,7 @@ func (l *Lane) refreshAllLane() {
 			log.Error(context.Background(), "get lane info config failed,not override old data!")
 			continue
 		}
-		log.Info(context.Background(), "[lane] found new lane info,replace now!", zap.Any("rules", allLanes))
+		log.Infof(context.Background(), "[lane] found new lane info,replace now!lanes: %v", allLanes)
 		l.mu.Lock()
 		l.allLanes = allLanes
 		l.mu.Unlock()

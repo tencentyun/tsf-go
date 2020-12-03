@@ -31,9 +31,10 @@ func doWork() {
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 		ctx = meta.WithUser(ctx, meta.UserPair{"user", "test2233"})
-		resp, err := greeter.SayHello(ctx, &pb.HelloRequest{Name: "cisy!"})
+		resp, err := greeter.SayHello(ctx, &pb.HelloRequest{Name: "lobser!"})
 		if err != nil {
-			panic(err)
+			log.Errorf(context.Background(), "got err: %v", err)
+			continue
 		}
 		cancel()
 		log.Infof(context.Background(), "got resp: %v", resp)
