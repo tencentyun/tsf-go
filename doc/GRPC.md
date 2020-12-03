@@ -126,7 +126,8 @@ WORKDIR ${workdir}
 # tsf-consul-template-docker 用于文件配置功能，如不需要可注释掉该行
 #ADD tsf-consul-template-docker.tar.gz /root/
 
-# JAVA_OPTS 环境变量的值为部署组的 JVM 启动参数，在运行时 bash 替换。使用 exec 以使 Java 程序可以接收 SIGTERM 信号。
+# JAVA_OPTS 环境变量的值为部署组的 JVM 启动参数，在运行时 bash 替换。如果加了${JAVA_OPTS},需要在TSF的容器部署组启动参数中删除默认的"-Xms128m xxx"参数,否则会启动失败
+# 使用 exec 以使 Java 程序可以接收 SIGTERM 信号。
 CMD ["sh", "-ec", "exec ${workdir}provider ${JAVA_OPTS}"]
 ```
 替换其中的provider为实际的可执行二进制文件名

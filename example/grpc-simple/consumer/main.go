@@ -29,6 +29,7 @@ func doWork() {
 	// get client stub
 	greeter := pb.NewGreeterClient(cc.GrpcConn())
 	for {
+		time.Sleep(time.Second * 2)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 		ctx = meta.WithUser(ctx, meta.UserPair{"user", "test2233"})
 		resp, err := greeter.SayHello(ctx, &pb.HelloRequest{Name: "lobser!"})
@@ -39,6 +40,5 @@ func doWork() {
 		cancel()
 		log.Infof(context.Background(), "got resp: %v", resp)
 		fmt.Println("resp:", resp, err)
-		time.Sleep(time.Second * 2)
 	}
 }
