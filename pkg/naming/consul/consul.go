@@ -273,7 +273,11 @@ func (c *Consul) healthService(svc naming.Service, index int64) (nodes []CheckSe
 		url += "&nsType=DEF"
 	}*/
 	if svc.Namespace != "" && svc.Namespace != env.NamespaceID() {
-		url += "&nid=" + svc.Namespace
+		if svc.Name == naming.NsGlobal {
+			url += "&nsType=GLOBAL"
+		} else {
+			url += "&nid=" + svc.Namespace
+		}
 	} else if c.conf.NamespaceID != "" {
 		url += "&nid=" + c.conf.NamespaceID
 	}

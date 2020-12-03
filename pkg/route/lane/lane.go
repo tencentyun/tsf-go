@@ -195,15 +195,16 @@ func (l *Lane) refreshAllRule() {
 			var rule LaneRule
 			err = spec.Data.Unmarshal(&rule)
 			if err != nil {
-				log.Error(context.Background(), "unmarshal lane config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
+				log.Error(context.Background(), "unmarshal lane rule config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
 				continue
 			}
 			allRules = append(allRules, rule)
 		}
 		if len(allRules) == 0 && err != nil {
-			log.Error(context.Background(), "get lane config failed,not override old data!")
+			log.Error(context.Background(), "get lane rule config failed,not override old data!")
 			continue
 		}
+		log.Info(context.Background(), "[lane] found new lane rule,replace now!", zap.Any("rules", allRules))
 		l.mu.Lock()
 		l.allRules = allRules
 		l.mu.Unlock()
@@ -235,6 +236,11 @@ func (l *Lane) refreshAllLane() {
 			}
 			allLanes[lane.ID] = lane
 		}
+		if len(allLanes) == 0 && err != nil {
+			log.Error(context.Background(), "get lane info config failed,not override old data!")
+			continue
+		}
+		log.Info(context.Background(), "[lane] found new lane info,replace now!", zap.Any("rules", allLanes))
 		l.mu.Lock()
 		l.allLanes = allLanes
 		l.mu.Unlock()

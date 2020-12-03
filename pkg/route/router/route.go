@@ -165,7 +165,8 @@ func (r *Router) refresh() {
 			svc := naming.NewService(ruleGroup[0].NamespaceId, ruleGroup[0].MicroserviceName)
 			services[svc] = ruleGroup[0]
 			if ruleGroup[0].NamespaceId != "" && ruleGroup[0].NamespaceId != env.NamespaceID() {
-				svc.Namespace = naming.NsGlobal
+				// 拉到的不是本命名空间的，则说明是全局命名空间的
+				svc := naming.NewService(naming.NsGlobal, ruleGroup[0].MicroserviceName)
 				services[svc] = ruleGroup[0]
 			}
 		}
@@ -173,6 +174,7 @@ func (r *Router) refresh() {
 			log.Error(context.Background(), "get route config failed,not override old data!")
 			continue
 		}
+		log.Info(context.Background(), "[route] found new route,replace now!", zap.Any("services", services))
 		r.services.Store(services)
 	}
 }

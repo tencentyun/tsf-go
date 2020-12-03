@@ -174,7 +174,7 @@ func (t *Topic) subscribe(ctx context.Context) {
 			if err != nil {
 				continue
 			}
-			if index != lastIndex || !reflect.DeepEqual(lastRes, res) {
+			if !reflect.DeepEqual(lastRes, res) {
 				t.broadcast(res)
 			}
 			lastRes = res
