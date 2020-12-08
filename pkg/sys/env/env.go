@@ -242,6 +242,12 @@ func init() {
 	flag.StringVar(&sshPass, "ssh_pass", os.Getenv("ssh_pass"), "-ssh_pass 123456")
 	flag.StringVar(&sshKeyFile, "ssh_key", os.Getenv("ssh_key"), "-ssh_key ~/.ssh/id_rsa")
 	flag.StringVar(&remoteIP, "cvm_remote_ip", os.Getenv("cvm_remote_ip"), "-cvm_remote_ip 172.168.1.1")
+
+	flag.String("Xms128m", "", "-Xms128m")
+	flag.String("Xmx512m", "", "-Xmx512m")
+	flag.String("XX:MetaspaceSize", "", "-XX:MetaspaceSize")
+	flag.String("XX:MaxMetaspaceSize", "", "XX:MaxMetaspaceSize")
+
 }
 
 func parseInt(i string) int {
