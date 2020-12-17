@@ -459,6 +459,12 @@ func (c *Consul) Subscribe(svc naming.Service) naming.Watcher {
 	v, ok := c.discovery[svc]
 	if !ok {
 		v = c.newService(svc)
+	} else {
+		nodes, _ := v.nodes.Load().([]naming.Instance)
+		if len(nodes) > 0 {
+			// watcher初始化的时候至少一个slot，所以肯定可以非阻塞推送成功
+			w.event <- struct{}{}
+		}
 	}
 	w.svc = v
 	v.watcher[w] = struct{}{}

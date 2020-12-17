@@ -56,6 +56,7 @@ type Server struct {
 	tracer *zipkin.Tracer
 
 	interceptors []grpc.UnaryServerInterceptor
+	stopHook     func(ctx context.Context) error
 }
 
 // NewServer create a grpc server instance
@@ -129,6 +130,12 @@ func (s *Server) fixConf(conf *Config) *Config {
 func (s *Server) Use(interceptors ...grpc.UnaryServerInterceptor) *Server {
 	s.interceptors = append(s.interceptors, interceptors...)
 	return s
+}
+
+// OnStop add stop hook to grpc server when server got terminating signal
+// 默认传入一个10s的timeout的context
+func (s *Server) OnStop(hook func(ctx context.Context) error) {
+	s.stopHook = hook
 }
 
 // Start create a tcp listener and start goroutine for serving each incoming request.
@@ -206,8 +213,16 @@ func (s *Server) Start() error {
 	sig := <-sigs
 	log.Info(context.Background(), "[server] got signal,exit now!", zap.String("sig", sig.String()), zap.String("name", s.conf.ServerName))
 	consul.DefaultConsul().Deregister(&ins)
-	time.Sleep(time.Second)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	if s.stopHook != nil {
+		err := s.stopHook(ctx)
+		if err != nil {
+			log.Error(ctx, "[server] stophook exec failed!", zap.String("name", s.conf.ServerName), zap.Error(err))
+		}
+	}
+
+	time.Sleep(time.Millisecond * 800)
+	ctx, cancel = context.WithTimeout(context.Background(), time.Second*10)
 	go func() {
 		s.GracefulStop()
 		trace.GetReporter().Close()
