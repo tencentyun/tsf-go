@@ -45,6 +45,9 @@ func (j JSON) Marshal(v interface{}) (out []byte, err error) {
 
 // Unmarshal is json unmarshal
 func (j JSON) Unmarshal(data []byte, v interface{}) (err error) {
+	if len(data) == 0 {
+		data = []byte("{}")
+	}
 	if pm, ok := v.(proto.Message); ok {
 		b := bytes.NewBuffer(data)
 		return j.Unmarshaler.Unmarshal(b, pm)
