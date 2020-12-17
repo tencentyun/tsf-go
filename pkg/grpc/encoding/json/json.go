@@ -11,12 +11,14 @@ import (
 
 //Reference https://jbrandhorst.com/post/grpc-json/
 func Init() {
-	encoding.RegisterCodec(JSON{
-		Marshaler: jsonpb.Marshaler{
-			EmitDefaults: true,
-			OrigName:     true,
-		},
-	})
+	if encoding.GetCodec(JSON{}.Name()) == nil {
+		encoding.RegisterCodec(JSON{
+			Marshaler: jsonpb.Marshaler{
+				EmitDefaults: true,
+				OrigName:     true,
+			},
+		})
+	}
 }
 
 // JSON is impl of encoding.Codec
