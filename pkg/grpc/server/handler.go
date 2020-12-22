@@ -3,10 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
-	"os"
-	"runtime"
 	"strconv"
 
 	"github.com/tencentyun/tsf-go/pkg/errCode"
@@ -26,11 +23,7 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-func (s *Server) getStat(method string) *monitor.Stat {
-	return monitor.NewStat(monitor.CategoryMS, monitor.KindServer, &monitor.Endpoint{ServiceName: s.conf.ServerName, InterfaceName: method, Path: method, Method: "POST"}, nil)
-}
-
-func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func (s *Server) startContext(ctx context.Context, api string) context.Context {
 	// add system metadata into ctx
 	var sysPairs []meta.SysPair
 	var userPairs []meta.UserPair
@@ -50,7 +43,7 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 				e := json.Unmarshal([]byte(vals[0]), &tsfMeta)
 				if e != nil {
 					v, e := url.QueryUnescape(vals[0])
-					if err == nil {
+					if e == nil {
 						e = json.Unmarshal([]byte(v), &tsfMeta)
 					} else {
 						log.Info(ctx, "grpc http parse header TSF-Metadata failed!", zap.String("meta", v), zap.Error(e))
@@ -86,7 +79,6 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 	if pr, ok := peer.FromContext(ctx); ok {
 		sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ConnnectionIP), Value: util.IPFromAddr(pr.Addr)})
 	}
-	api := info.FullMethod
 
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ServiceName, Value: s.conf.ServerName})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.Namespace, Value: env.NamespaceID()})
@@ -98,6 +90,29 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ConnnectionIP, Value: env.LocalIP()})
 	ctx = meta.WithSys(ctx, sysPairs...)
 	ctx = meta.WithUser(ctx, userPairs...)
+	return ctx
+}
+
+func remoteEndpointFromContext(ctx context.Context) *model.Endpoint {
+	remoteAddr := ""
+
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		remoteAddr = p.Addr.String()
+	}
+	var name string
+	name, _ = meta.Sys(ctx, meta.SourceKey(meta.ServiceName)).(string)
+	ep, _ := zipkin.NewEndpoint(name, remoteAddr)
+	return ep
+}
+
+func (s *Server) getStat(method string) *monitor.Stat {
+	return monitor.NewStat(monitor.CategoryMS, monitor.KindServer, &monitor.Endpoint{ServiceName: s.conf.ServerName, InterfaceName: method, Path: method, Method: "POST"}, nil)
+}
+
+func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	api := info.FullMethod
+	ctx = s.startContext(ctx, api)
 	stat := s.getStat(api)
 	span := zipkin.SpanFromContext(ctx)
 	span.Tag("http.method", "POST")
@@ -105,20 +120,6 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 	span.Tag("http.path", api)
 	span.SetRemoteEndpoint(remoteEndpointFromContext(ctx))
 	defer func() {
-		if rerr := recover(); rerr != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			rs := runtime.Stack(buf, false)
-			if rs > size {
-				rs = size
-			}
-			buf = buf[:rs]
-			pl := fmt.Sprintf("grpc server panic: %v\n%v\n%s\n", req, rerr, buf)
-			fmt.Fprintf(os.Stderr, pl)
-			log.Error(ctx, pl)
-			err = errCode.Internal
-		}
-
 		var code = 200
 		if err != nil {
 			if ec, ok := err.(errCode.ErrCode); ok {
@@ -143,15 +144,37 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 	return
 }
 
-func remoteEndpointFromContext(ctx context.Context) *model.Endpoint {
-	remoteAddr := ""
-
-	p, ok := peer.FromContext(ctx)
-	if ok {
-		remoteAddr = p.Addr.String()
+// StreamServerInterceptor returns a new unary server interceptors that performs per-request auth.
+func (s *Server) handleStream(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
+	api := info.FullMethod
+	ctx := s.startContext(stream.Context(), api)
+	stat := s.getStat(api)
+	span := zipkin.SpanFromContext(ctx)
+	span.Tag("http.method", "POST")
+	span.Tag("localInterface", api)
+	span.Tag("http.path", api)
+	span.SetRemoteEndpoint(remoteEndpointFromContext(ctx))
+	defer func() {
+		var code = 200
+		if err != nil {
+			if ec, ok := err.(errCode.ErrCode); ok {
+				code = ec.Code()
+			} else {
+				code = 500
+			}
+			span.Tag("exception", err.Error())
+			err = status.ToGrpcStatus(err)
+		}
+		span.Tag("resultStatus", strconv.FormatInt(int64(code), 10))
+		stat.Record(code)
+	}()
+	// 鉴权
+	err = s.authen.Verify(ctx, info.FullMethod)
+	if err != nil {
+		return
 	}
-	var name string
-	name, _ = meta.Sys(ctx, meta.SourceKey(meta.ServiceName)).(string)
-	ep, _ := zipkin.NewEndpoint(name, remoteAddr)
-	return ep
+	wrapped := WrapServerStream(stream)
+	wrapped.WrappedContext = ctx
+	err = handler(srv, wrapped)
+	return
 }

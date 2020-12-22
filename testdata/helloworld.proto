@@ -1,13 +1,14 @@
 syntax = "proto3";
 
 package tsf.test.helloworld;
-option go_package="testdata";
-
+option go_package = ".;testdata";
 
 // The greeting service definition.
 service Greeter {
-  // Sends a greeting
+  // Sends a SayHello greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {}
+  // Sends a SayHello greeting by Stream
+  rpc SayHelloStream(stream HelloRequest) returns (stream HelloReply) {};
 }
 
 // The request message containing the user's name.

@@ -7,7 +7,6 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/fullstorydev/grpcurl v1.7.0
 	github.com/gogo/protobuf v1.3.1
-	github.com/golang/protobuf v1.4.3
 	github.com/google/gops v0.3.14
 	github.com/jhump/protoreflect v1.8.1
 	github.com/json-iterator/go v1.1.10 // indirect

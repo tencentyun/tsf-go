@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"time"
 
 	"github.com/tencentyun/tsf-go/pkg/grpc/client"
@@ -30,15 +29,32 @@ func doWork() {
 	greeter := pb.NewGreeterClient(cc.GrpcConn())
 	for {
 		time.Sleep(time.Second * 2)
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+		ctx, _ := context.WithTimeout(context.Background(), time.Second*2)
 		ctx = meta.WithUser(ctx, meta.UserPair{"user", "test2233"})
 		resp, err := greeter.SayHello(ctx, &pb.HelloRequest{Name: "lobser!"})
 		if err != nil {
 			log.Errorf(context.Background(), "got err: %v", err)
 			continue
 		}
-		cancel()
-		log.Infof(context.Background(), "got resp: %v", resp)
-		fmt.Println("resp:", resp, err)
+		log.Infof(context.Background(), "unary SayHello resp: %v", resp)
+
+		ctx, _ = context.WithTimeout(context.Background(), time.Second*2)
+		stream, err := greeter.SayHelloStream(ctx)
+		if err != nil {
+			log.Errorf(context.Background(), "stream got err: %v", err)
+			continue
+		}
+		err = stream.Send(&pb.HelloRequest{Name: "stream lobser"})
+		if err != nil {
+			log.Errorf(context.Background(), "stream got err: %v", err)
+			continue
+		}
+		resp, err = stream.Recv()
+		if err != nil {
+			log.Errorf(context.Background(), "stream got err: %v", err)
+			continue
+		}
+		stream.CloseSend()
+		log.Infof(context.Background(), "steam SayHello resp: %v", resp)
 	}
 }

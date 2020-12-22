@@ -23,10 +23,12 @@ import (
 // Create an instance of Client, by using NewClient().
 type ClientConn struct {
 	*grpc.ClientConn
-	remoteService naming.Service
-	interceptors  []grpc.UnaryClientInterceptor
-	opts          []grpc.DialOption
-	lane          *lane.Lane
+	remoteService      naming.Service
+	interceptors       []grpc.UnaryClientInterceptor
+	streamInterceptors []grpc.StreamClientInterceptor
+
+	opts []grpc.DialOption
+	lane *lane.Lane
 }
 
 // DialWithBlock create a grpc client conn with context
@@ -61,6 +63,7 @@ func (c *ClientConn) setup(target string, block bool, o ...grpc.DialOption) erro
 	wrr.Register(balancer)
 	// 加载框架自带的middleware
 	c.Use(c.handle)
+	c.UseStream(c.handleStream)
 	c.lane = balancer.Lane()
 
 	c.opts = append(c.opts,
@@ -71,6 +74,7 @@ func (c *ClientConn) setup(target string, block bool, o ...grpc.DialOption) erro
 			PermitWithoutStream: true,
 		}),
 		grpc.WithUnaryInterceptor(c.chainUnaryClient()),
+		grpc.WithStreamInterceptor(c.chainStreamClient()),
 	)
 	if block {
 		c.opts = append(c.opts, grpc.WithBlock())
@@ -87,37 +91,6 @@ func (c *ClientConn) setup(target string, block bool, o ...grpc.DialOption) erro
 		c.opts = append(c.opts, grpc.WithBalancerName(wrr.Name))
 	}
 	return nil
-}
-
-// Use attachs a global inteceptor to the Client.
-// For example, this is the right place for a circuit breaker or error management inteceptor.
-// This function is not concurrency safe.
-func (c *ClientConn) Use(interceptors ...grpc.UnaryClientInterceptor) *ClientConn {
-	c.interceptors = append(c.interceptors, interceptors...)
-	return c
-}
-
-// ChainUnaryClient creates a single interceptor out of a chain of many interceptors.
-//
-// Execution is done in left-to-right order, including passing of context.
-// For example ChainUnaryClient(one, two, three) will execute one before two before three.
-func (c *ClientConn) chainUnaryClient() grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		n := len(c.interceptors)
-
-		chainer := func(currentInter grpc.UnaryClientInterceptor, currentInvoker grpc.UnaryInvoker) grpc.UnaryInvoker {
-			return func(currentCtx context.Context, currentMethod string, currentReq, currentRepl interface{}, currentConn *grpc.ClientConn, currentOpts ...grpc.CallOption) error {
-				return currentInter(currentCtx, currentMethod, currentReq, currentRepl, currentConn, currentInvoker, currentOpts...)
-			}
-		}
-
-		chainedInvoker := invoker
-		for i := n - 1; i >= 0; i-- {
-			chainedInvoker = chainer(c.interceptors[i], chainedInvoker)
-		}
-
-		return chainedInvoker(ctx, method, req, reply, cc, opts...)
-	}
 }
 
 func (c *ClientConn) GrpcConn() *grpc.ClientConn {

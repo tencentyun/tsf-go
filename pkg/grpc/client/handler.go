@@ -30,13 +30,12 @@ func (c *ClientConn) getStat(ctx context.Context, method string) *monitor.Stat {
 	return monitor.NewStat(monitor.CategoryMS, monitor.KindClient, &monitor.Endpoint{ServiceName: localService, InterfaceName: localMethod, Path: localMethod, Method: "POST"}, &monitor.Endpoint{ServiceName: c.remoteService.Name, InterfaceName: method})
 }
 
-func (c *ClientConn) handle(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
+func (c *ClientConn) startContext(ctx context.Context, api string) context.Context {
 	// 注入远端服务名
 	pairs := []meta.SysPair{
 		{Key: meta.DestKey(meta.ServiceName), Value: c.remoteService.Name},
 		{Key: meta.DestKey(meta.ServiceNamespace), Value: c.remoteService.Namespace},
 	}
-	api := method
 
 	// 注入自己的服务名
 	serviceName := env.ServiceName()
@@ -73,7 +72,12 @@ func (c *ClientConn) handle(ctx context.Context, method string, req, reply inter
 		gmd = metadata.Join(gmd, oldmd)
 	}
 	ctx = metadata.NewOutgoingContext(ctx, gmd)
+	return ctx
+}
 
+func (c *ClientConn) handle(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
+	api := method
+	ctx = c.startContext(ctx, api)
 	ctx = c.startSpan(ctx, api)
 	stat := c.getStat(ctx, api)
 	defer func() {
@@ -97,6 +101,35 @@ func (c *ClientConn) handle(ctx context.Context, method string, req, reply inter
 	}()
 
 	err = invoker(ctx, method, req, reply, cc, opts...)
+	return
+}
+
+func (c *ClientConn) handleStream(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (clientStream grpc.ClientStream, err error) {
+	api := method
+	ctx = c.startContext(ctx, api)
+	ctx = c.startSpan(ctx, api)
+	stat := c.getStat(ctx, api)
+	defer func() {
+		var code = 200
+		if err = status.FromGrpcStatus(err); err != nil {
+			if ec, ok := err.(errCode.ErrCode); ok {
+				code = ec.Code()
+			} else {
+				code = 500
+			}
+		}
+		stat.Record(code)
+		span := zipkin.SpanFromContext(ctx)
+		if span != nil {
+			if err != nil {
+				span.Tag("exception", err.Error())
+			}
+			span.Tag("resultStatus", strconv.FormatInt(int64(code), 10))
+			span.Finish()
+		}
+	}()
+
+	clientStream, err = streamer(ctx, desc, cc, method, opts...)
 	return
 }
 

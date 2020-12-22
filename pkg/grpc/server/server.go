@@ -55,8 +55,9 @@ type Server struct {
 	authen auth.Auth
 	tracer *zipkin.Tracer
 
-	interceptors []grpc.UnaryServerInterceptor
-	stopHook     func(ctx context.Context) error
+	interceptors       []grpc.UnaryServerInterceptor
+	streamInterceptors []grpc.StreamServerInterceptor
+	stopHook           func(ctx context.Context) error
 }
 
 // NewServer create a grpc server instance
@@ -93,6 +94,7 @@ func NewServer(conf *Config, o ...grpc.ServerOption) (s *Server) {
 			MaxConnectionAge: time.Hour * 4,
 		}),
 		grpc.UnaryInterceptor(s.chainUnaryInterceptors()),
+		grpc.StreamInterceptor(s.chainStreamServer()),
 		grpc.StatsHandler(zipkingrpc.NewServerHandler(tracer)),
 	)
 
@@ -101,7 +103,8 @@ func NewServer(conf *Config, o ...grpc.ServerOption) (s *Server) {
 	s.Server = grpc.NewServer(opts...)
 	builder := &authenticator.Builder{}
 	s.authen = builder.Build(cfgConsul.DefaultConsul(), naming.NewService(env.NamespaceID(), conf.ServerName))
-	s.Use(s.handle)
+	s.Use(s.recovery, s.handle)
+	s.UseStream(s.recoveryStream, s.handleStream)
 
 	// register default health check service
 	healthService := health.NewServer()
@@ -122,14 +125,6 @@ func (s *Server) fixConf(conf *Config) *Config {
 		newConf.ServerName = env.ServiceName()
 	}
 	return &newConf
-}
-
-// Use attachs a global inteceptor to the server.
-// For example, this is the right place for a rate limiter or error management inteceptor.
-// This function is not concurrency safe.
-func (s *Server) Use(interceptors ...grpc.UnaryServerInterceptor) *Server {
-	s.interceptors = append(s.interceptors, interceptors...)
-	return s
 }
 
 // OnStop add stop hook to grpc server when server got terminating signal
@@ -237,28 +232,6 @@ func (s *Server) Start() error {
 		log.Info(ctx, "[server] graceful shutdown success!", zap.String("name", s.conf.ServerName))
 	}
 	return nil
-}
-
-// chainUnaryInterceptors creates a single interceptor out of a chain of many interceptors.
-// Execution is done in left-to-right order, including passing of context.
-// For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
-// will see context changes of one and two.
-func (s *Server) chainUnaryInterceptors() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		n := len(s.interceptors)
-		chainer := func(currentInter grpc.UnaryServerInterceptor, currentHandler grpc.UnaryHandler) grpc.UnaryHandler {
-			return func(currentCtx context.Context, currentReq interface{}) (interface{}, error) {
-				return currentInter(currentCtx, currentReq, info, currentHandler)
-			}
-		}
-
-		chainedHandler := handler
-		for i := n - 1; i >= 0; i-- {
-			chainedHandler = chainer(s.interceptors[i], chainedHandler)
-		}
-
-		return chainedHandler(ctx, req)
-	}
 }
 
 func (s *Server) GrpcServer() *grpc.Server {

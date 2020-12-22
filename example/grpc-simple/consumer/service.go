@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/tencentyun/tsf-go/pkg/grpc/client"
@@ -37,4 +38,38 @@ func (s *Service) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.Hello
 	//注入tsf的用户标签，会传递给下游
 	ctx = meta.WithUser(ctx, meta.UserPair{Key: "user", Value: "test2233"})
 	return s.client.SayHello(ctx, req)
+}
+
+// SayHello is service method of SayHelloStream
+func (s *Service) SayHelloStream(stream pb.Greeter_SayHelloStreamServer) error {
+	cliStream, err := s.client.SayHelloStream(stream.Context())
+	if err != nil {
+		return err
+	}
+	for {
+		r, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		err = cliStream.Send(r)
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		resp, err := cliStream.Recv()
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		err = stream.Send(resp)
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+	}
 }
