@@ -18,7 +18,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func (c *ClientConn) getStat(ctx context.Context, method string) *monitor.Stat {
+func (c *Conn) getStat(ctx context.Context, method string) *monitor.Stat {
 	localService, ok := meta.Sys(ctx, meta.ServiceName).(string)
 	if !ok {
 		localService = env.ServiceName()
@@ -30,7 +30,7 @@ func (c *ClientConn) getStat(ctx context.Context, method string) *monitor.Stat {
 	return monitor.NewStat(monitor.CategoryMS, monitor.KindClient, &monitor.Endpoint{ServiceName: localService, InterfaceName: localMethod, Path: localMethod, Method: "POST"}, &monitor.Endpoint{ServiceName: c.remoteService.Name, InterfaceName: method})
 }
 
-func (c *ClientConn) startContext(ctx context.Context, api string) context.Context {
+func (c *Conn) startContext(ctx context.Context, api string) context.Context {
 	// 注入远端服务名
 	pairs := []meta.SysPair{
 		{Key: meta.DestKey(meta.ServiceName), Value: c.remoteService.Name},
@@ -75,7 +75,7 @@ func (c *ClientConn) startContext(ctx context.Context, api string) context.Conte
 	return ctx
 }
 
-func (c *ClientConn) handle(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
+func (c *Conn) handle(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 	api := method
 	ctx = c.startContext(ctx, api)
 	ctx = c.startSpan(ctx, api)
@@ -104,7 +104,7 @@ func (c *ClientConn) handle(ctx context.Context, method string, req, reply inter
 	return
 }
 
-func (c *ClientConn) handleStream(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (clientStream grpc.ClientStream, err error) {
+func (c *Conn) handleStream(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (clientStream grpc.ClientStream, err error) {
 	api := method
 	ctx = c.startContext(ctx, api)
 	ctx = c.startSpan(ctx, api)
@@ -133,7 +133,7 @@ func (c *ClientConn) handleStream(ctx context.Context, desc *grpc.StreamDesc, cc
 	return
 }
 
-func (c *ClientConn) startSpan(ctx context.Context, api string) context.Context {
+func (c *Conn) startSpan(ctx context.Context, api string) context.Context {
 	tracer, ok := meta.Sys(ctx, meta.Tracer).(*zipkin.Tracer)
 	if !ok || tracer == nil {
 		return ctx

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"io"
+	"os"
 	"time"
 
 	"github.com/tencentyun/tsf-go/pkg/grpc/client"
@@ -22,9 +23,14 @@ func newService() {
 	if err != nil {
 		panic(err)
 	}
-	greeter := pb.NewGreeterClient(cc.ClientConn)
+	greeter := pb.NewGreeterClient(cc.GrpcConn())
 
 	server := server.NewServer(&server.Config{ServerName: "client-grpc", Port: 8082})
+	// Add stop hook
+	server.OnStop(func(ctx context.Context) error {
+		os.Exit(0)
+		return nil
+	})
 	pb.RegisterGreeterServer(server.Server, &Service{client: greeter})
 	go func() {
 		err := server.Start()

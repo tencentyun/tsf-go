@@ -19,9 +19,9 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-// ClientConn is the framework's client side instance, it contains the ctx, opt and interceptors.
+// Conn is the framework's client side instance, it contains the ctx, opt and interceptors.
 // Create an instance of Client, by using NewClient().
-type ClientConn struct {
+type Conn struct {
 	*grpc.ClientConn
 	remoteService      naming.Service
 	interceptors       []grpc.UnaryClientInterceptor
@@ -34,8 +34,8 @@ type ClientConn struct {
 // DialWithBlock create a grpc client conn with context
 // It will block until create connection successfully
 // 核心依赖建议使用DialWithBlock，确保能够拉到服务提供者节点再进行后续的启动操作
-func DialWithBlock(ctx context.Context, target string, opts ...grpc.DialOption) (c *ClientConn, err error) {
-	c = &ClientConn{}
+func DialWithBlock(ctx context.Context, target string, opts ...grpc.DialOption) (c *Conn, err error) {
+	c = &Conn{}
 	c.setup(target, true, opts...)
 	if c.ClientConn, err = grpc.DialContext(ctx, target, c.opts...); err != nil {
 		return
@@ -45,8 +45,8 @@ func DialWithBlock(ctx context.Context, target string, opts ...grpc.DialOption) 
 
 // Dial create a grpc client conn
 // It will return immediately without any blocking
-func Dial(target string, opts ...grpc.DialOption) (c *ClientConn, err error) {
-	c = &ClientConn{}
+func Dial(target string, opts ...grpc.DialOption) (c *Conn, err error) {
+	c = &Conn{}
 	c.setup(target, false, opts...)
 	if c.ClientConn, err = grpc.Dial(target, c.opts...); err != nil {
 		return
@@ -54,7 +54,7 @@ func Dial(target string, opts ...grpc.DialOption) (c *ClientConn, err error) {
 	return
 }
 
-func (c *ClientConn) setup(target string, block bool, o ...grpc.DialOption) error {
+func (c *Conn) setup(target string, block bool, o ...grpc.DialOption) error {
 	util.ParseFlag()
 	// 将consul服务发现模块注入至grpc
 	resolver.Register(consul.DefaultConsul())
@@ -93,6 +93,7 @@ func (c *ClientConn) setup(target string, block bool, o ...grpc.DialOption) erro
 	return nil
 }
 
-func (c *ClientConn) GrpcConn() *grpc.ClientConn {
+// GrpcConn exports grpc connection
+func (c *Conn) GrpcConn() *grpc.ClientConn {
 	return c.ClientConn
 }

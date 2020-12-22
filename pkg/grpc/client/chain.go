@@ -9,7 +9,7 @@ import (
 // Use attachs a global inteceptor to the Client.
 // For example, this is the right place for a circuit breaker or error management inteceptor.
 // This function is not concurrency safe.
-func (c *ClientConn) Use(interceptors ...grpc.UnaryClientInterceptor) *ClientConn {
+func (c *Conn) Use(interceptors ...grpc.UnaryClientInterceptor) *Conn {
 	c.interceptors = append(c.interceptors, interceptors...)
 	return c
 }
@@ -17,7 +17,7 @@ func (c *ClientConn) Use(interceptors ...grpc.UnaryClientInterceptor) *ClientCon
 // UseStream attachs a global inteceptor to the Client.
 // For example, this is the right place for a circuit breaker or error management inteceptor.
 // This function is not concurrency safe.
-func (c *ClientConn) UseStream(interceptors ...grpc.StreamClientInterceptor) *ClientConn {
+func (c *Conn) UseStream(interceptors ...grpc.StreamClientInterceptor) *Conn {
 	c.streamInterceptors = append(c.streamInterceptors, interceptors...)
 	return c
 }
@@ -26,7 +26,7 @@ func (c *ClientConn) UseStream(interceptors ...grpc.StreamClientInterceptor) *Cl
 //
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryClient(one, two, three) will execute one before two before three.
-func (c *ClientConn) chainUnaryClient() grpc.UnaryClientInterceptor {
+func (c *Conn) chainUnaryClient() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		n := len(c.interceptors)
 
@@ -49,7 +49,7 @@ func (c *ClientConn) chainUnaryClient() grpc.UnaryClientInterceptor {
 //
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainStreamClient(one, two, three) will execute one before two before three.
-func (c *ClientConn) chainStreamClient() grpc.StreamClientInterceptor {
+func (c *Conn) chainStreamClient() grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		n := len(c.streamInterceptors)
 
