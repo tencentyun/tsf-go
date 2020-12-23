@@ -55,24 +55,28 @@ func (s *Service) SayHelloStream(stream pb.Greeter_SayHelloStreamServer) error {
 	for {
 		r, err := stream.Recv()
 		if err == io.EOF {
+			cliStream.CloseSend()
 			return nil
 		} else if err != nil {
 			return err
 		}
 		err = cliStream.Send(r)
 		if err == io.EOF {
+			cliStream.CloseSend()
 			return nil
 		} else if err != nil {
 			return err
 		}
 		resp, err := cliStream.Recv()
 		if err == io.EOF {
+			cliStream.CloseSend()
 			return nil
 		} else if err != nil {
 			return err
 		}
 		err = stream.Send(resp)
 		if err == io.EOF {
+			cliStream.CloseSend()
 			return nil
 		} else if err != nil {
 			return err

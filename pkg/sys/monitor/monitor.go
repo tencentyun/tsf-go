@@ -94,17 +94,17 @@ func (m *Monitor) dump(old map[string][]*Stat) {
 		for code, num := range statusCode {
 			statusCodes = append(statusCodes, StatusCode{Code: strconv.FormatInt(int64(code), 10), Amount: int64(num)})
 			if code == 200 {
-				statusSerial.Successful++
+				statusSerial.Successful += num
 			} else if code == 400 || code == 499 {
-				statusSerial.ClientErr++
+				statusSerial.ClientErr += num
 			} else if code == 500 {
-				statusSerial.ServerErr++
+				statusSerial.ServerErr += num
 			} else if code == 503 || code == 429 || code == 444 {
-				statusSerial.Unavailable++
+				statusSerial.Unavailable += num
 			} else if code == 504 {
-				statusSerial.Timeout++
+				statusSerial.Timeout += num
 			} else {
-				statusSerial.OtherErr++
+				statusSerial.OtherErr += num
 			}
 		}
 		invocation := Invocation{
