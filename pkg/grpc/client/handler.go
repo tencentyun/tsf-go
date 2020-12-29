@@ -134,13 +134,26 @@ func (c *Conn) handleStream(ctx context.Context, desc *grpc.StreamDesc, cc *grpc
 }
 
 func (c *Conn) startSpan(ctx context.Context, api string) context.Context {
-	tracer, ok := meta.Sys(ctx, meta.Tracer).(*zipkin.Tracer)
-	if !ok || tracer == nil {
-		return ctx
+	tracer, _ := meta.Sys(ctx, meta.Tracer).(*zipkin.Tracer)
+	if tracer == nil {
+		tracer, _ = ctx.Value(meta.Tracer).(*zipkin.Tracer)
+		if tracer == nil {
+			return ctx
+		}
 	}
 
-	var span zipkin.Span
-	span, ctx = tracer.StartSpanFromContext(ctx, api, zipkin.Kind(model.Client))
+	parentSpan := zipkin.SpanFromContext(ctx)
+	if parentSpan == nil {
+		parentSpan, _ = ctx.Value("tsf.spankey").(zipkin.Span)
+	}
+
+	options := []zipkin.SpanOption{zipkin.Kind(model.Client)}
+	if parentSpan != nil {
+		options = append(options, zipkin.Parent(parentSpan.Context()))
+	}
+	span := tracer.StartSpan(api, options...)
+	ctx = zipkin.NewContext(ctx, span)
+
 	span.Tag("http.method", "POST")
 	span.Tag("localInterface", api)
 	span.Tag("http.path", api)

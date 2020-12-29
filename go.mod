@@ -6,6 +6,7 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20201021153353-00ad82a08272
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/fullstorydev/grpcurl v1.7.0
+	github.com/gin-gonic/gin v1.6.3
 	github.com/gogo/protobuf v1.3.1
 	github.com/google/gops v0.3.14
 	github.com/jhump/protoreflect v1.8.1
