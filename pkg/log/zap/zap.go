@@ -82,7 +82,10 @@ type Logger struct {
 func genPrefix(ctx context.Context) string {
 	span := zipkin.SpanFromContext(ctx)
 	if span == nil {
-		return ""
+		span, _ = ctx.Value("tsf.spankey").(zipkin.Span)
+		if span == nil {
+			return ""
+		}
 	}
 	return span.Context().TraceID.String() + " "
 }
