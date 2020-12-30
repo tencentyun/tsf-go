@@ -77,6 +77,7 @@ type Picker struct {
 	b         tBalancer.Balancer
 }
 
+// Pick pick instances
 func (p *Picker) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
 	svc := naming.NewService(
 		meta.Sys(info.Ctx, meta.DestKey(meta.ServiceNamespace)).(string),
@@ -89,7 +90,7 @@ func (p *Picker) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
 		log.Error(info.Ctx, "grpc picker: ErrNoSubConnAvailable!")
 		return balancer.PickResult{}, balancer.ErrNoSubConnAvailable
 	}
-	node := p.b.Pick(info.Ctx, nodes)
+	node, _ := p.b.Pick(info.Ctx, nodes)
 	span := zipkin.SpanFromContext(info.Ctx)
 	if span != nil {
 		ep, _ := zipkin.NewEndpoint(node.Service.Name, node.Addr())

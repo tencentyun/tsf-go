@@ -25,6 +25,7 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/sys/metrics"
 	"github.com/tencentyun/tsf-go/pkg/sys/trace"
 	"github.com/tencentyun/tsf-go/pkg/util"
+	"github.com/tencentyun/tsf-go/version"
 
 	"github.com/openzipkin/zipkin-go"
 	zipkingrpc "github.com/openzipkin/zipkin-go/middleware/grpc"
@@ -192,6 +193,7 @@ func (s *Server) Start() error {
 			"protocol":           "grpc",
 			"TSF_API_METAS":      apiStr,
 			"TSF_NAMESPACE_ID":   env.NamespaceID(),
+			"TSF_SDK_VERSION":    version.GetHumanVersion(),
 		},
 	}
 	err = consul.DefaultConsul().Register(&ins)

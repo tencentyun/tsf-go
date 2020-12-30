@@ -15,10 +15,10 @@ var (
 type Picker struct {
 }
 
-func (p *Picker) Pick(ctx context.Context, nodes []naming.Instance) (node *naming.Instance) {
+func (p *Picker) Pick(ctx context.Context, nodes []naming.Instance) (node *naming.Instance, done func(balancer.DoneInfo)) {
 	if len(nodes) == 0 {
-		return nil
+		return nil, nil
 	}
 	cur := rand.Intn(len(nodes))
-	return &nodes[cur]
+	return &nodes[cur], nil
 }
