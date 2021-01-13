@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/tencentyun/tsf-go/pkg/config"
-	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/http"
 	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
 
@@ -125,7 +125,7 @@ func (c *Consul) fetch(path string, index int64) (res []config.Spec, consulIndex
 	)
 	header, err = c.queryCli.Get(url, &items)
 	if err != nil {
-		if errCode.NotFound.Equal(err) {
+		if statusError.IsNotFound(err) {
 			err = nil
 		} else {
 			return
@@ -135,11 +135,11 @@ func (c *Consul) fetch(path string, index int64) (res []config.Spec, consulIndex
 		str := header.Get("X-Consul-Index")
 		consulIndex, err = strconv.ParseInt(str, 10, 64)
 		if err != nil {
-			err = errCode.New(500, "consul index invalid: %s", str)
+			err = statusError.Internal(fmt.Sprintf("consul index invalid: %s", str))
 			return
 		}
 	} else {
-		err = errCode.New(500, "consul index invalid,no http header found!")
+		err = statusError.New(500, "consul index invalid,no http header found!")
 		return
 	}
 	for _, item := range items {
@@ -240,10 +240,10 @@ type Watcher struct {
 func (w *Watcher) Watch(ctx context.Context) (spec []config.Spec, err error) {
 	select {
 	case <-ctx.Done():
-		err = errCode.Deadline
+		err = statusError.Deadline("")
 		return
 	case <-w.ctx.Done():
-		err = errCode.ClientClosed
+		err = statusError.ClientClosed("")
 		return
 	case <-w.event:
 		spec, _ = w.topic.spec.Load().([]config.Spec)

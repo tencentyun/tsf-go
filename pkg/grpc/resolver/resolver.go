@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/attributes"
@@ -88,7 +88,7 @@ func (r *Resolver) updateproc() {
 	ctx := context.Background()
 	for {
 		nodes, err := r.watcher.Watch(ctx)
-		if errCode.ClientClosed.Equal(err) {
+		if statusError.IsClientClosed(err) {
 			return
 		}
 		if len(nodes) > 0 {

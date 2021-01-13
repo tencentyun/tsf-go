@@ -1,100 +1,91 @@
 package status
 
 import (
-	"github.com/tencentyun/tsf-go/pkg/errCode"
-
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+//FromGrpcStatus convert grpc to app error
 func FromGrpcStatus(err error) error {
 	gst, ok := status.FromError(err)
 	if !ok || gst == nil {
 		return err
 	}
 	gcode := gst.Code()
+
 	switch gcode {
 	case codes.OK:
 		return nil
 	case codes.InvalidArgument:
-		return errCode.New(errCode.BadRequest.Code(), gst.Err().Error())
+		return statusError.BadRequest(gst.Message())
 	case codes.NotFound:
-		return errCode.New(errCode.NotFound.Code(), gst.Err().Error())
+		return statusError.NotFound(gst.Message())
 	case codes.PermissionDenied:
-		return errCode.New(errCode.Forbidden.Code(), gst.Err().Error())
+		return statusError.Forbidden(gst.Message())
 	case codes.Unauthenticated:
-		return errCode.New(errCode.Unauthorized.Code(), gst.Err().Error())
+		return statusError.Unauthorized(gst.Message())
 	case codes.ResourceExhausted:
-		return errCode.New(errCode.LimitExceed.Code(), gst.Err().Error())
+		return statusError.LimitExceed(gst.Message())
 	case codes.Unimplemented:
-		return errCode.New(errCode.NotImplemented.Code(), gst.Err().Error())
+		return statusError.NotImplemented(gst.Message())
 	case codes.Aborted:
-		return errCode.New(errCode.ServerClosed.Code(), gst.Err().Error())
+		return statusError.ServerClosed(gst.Message())
 	case codes.DeadlineExceeded:
-		return errCode.New(errCode.Deadline.Code(), gst.Err().Error())
+		return statusError.Deadline(gst.Message())
 	case codes.Unavailable:
-		return errCode.New(errCode.ServiceUnavailable.Code(), gst.Err().Error())
+		return statusError.ServiceUnavailable(gst.Message())
 	case codes.FailedPrecondition:
-		return errCode.New(errCode.PreconditionRequired.Code(), gst.Err().Error())
+		return statusError.PreconditionRequired(gst.Message())
 	case codes.Unknown:
-		var ec *errCode.ErrCode
-		e := ec.UnmarshalJSON([]byte(gst.Message()))
-		if e == nil {
-			return ec
-		}
-		return err
+		return statusError.Unknown(gst.Message())
 	default:
-		return errCode.New(errCode.Internal.Code(), gst.Err().Error())
+		return statusError.Internal(gst.Message())
 	}
 }
 
+// ToGrpcStatus convert app error to grpc error
 func ToGrpcStatus(err error) error {
-	if ec, ok := err.(errCode.ErrCode); ok {
-		if ec.Code() == errCode.OK.Code() {
+	if ec, ok := err.(*statusError.StatusError); ok && ec != nil {
+		if ec.Code() == statusError.CodeOK {
 			return nil
 		}
-		var st *status.Status
-		if ec.Code() <= errCode.CustomErr.Code() {
-			st = status.New(errCodeToGrpcCode(ec), ec.Error())
-		} else {
-			eCon, _ := ec.MarshalJSON()
-			st = status.New(codes.Unknown, string(eCon))
-		}
-		if ec.Details() != nil {
-			// TODO: add more details
-		}
-		return st.Err()
+		return status.New(errCodeToGrpcCode(ec), ec.Reason()).Err()
 	}
+
 	return err
 }
 
-func errCodeToGrpcCode(ec errCode.ErrCode) codes.Code {
+func errCodeToGrpcCode(ec *statusError.StatusError) codes.Code {
 	// 系统错误
 	switch ec.Code() {
-	case errCode.OK.Code():
+	case statusError.CodeOK:
 		return codes.OK
-	case errCode.BadRequest.Code():
+	case statusError.CodeBadRequest:
 		return codes.InvalidArgument
-	case errCode.Unauthorized.Code():
+	case statusError.CodeUnauthorized:
 		return codes.Unauthenticated
-	case errCode.Forbidden.Code():
+	case statusError.CodeForbidden:
 		return codes.PermissionDenied
-	case errCode.NotFound.Code():
+	case statusError.CodeNotFound:
 		return codes.NotFound
-	case errCode.PreconditionRequired.Code():
+	case statusError.CodePreconditionRequired:
 		return codes.FailedPrecondition
-	case errCode.LimitExceed.Code():
+	case statusError.CodeLimitExceed:
 		return codes.ResourceExhausted
-	case errCode.ServerClosed.Code(), errCode.ClientClosed.Code():
+	case statusError.CodeServerClosed, statusError.CodeClientClosed:
 		return codes.Aborted
-	case errCode.Internal.Code():
+	case statusError.CodeInternal:
 		return codes.Internal
-	case errCode.NotImplemented.Code():
+	case statusError.CodeNotImplemented:
 		return codes.Unimplemented
-	case errCode.ServiceUnavailable.Code():
+	case statusError.CodeServiceUnavailable:
 		return codes.Unavailable
-	case errCode.Deadline.Code():
+	case statusError.CodeDeadline:
 		return codes.DeadlineExceeded
+	case statusError.CodeUnknown:
+		return codes.Unknown
+	default:
+		return codes.Internal
 	}
-	return codes.Internal
 }

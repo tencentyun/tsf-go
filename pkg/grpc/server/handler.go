@@ -6,11 +6,11 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/grpc/status"
 	tsfHttp "github.com/tencentyun/tsf-go/pkg/http"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 	"github.com/tencentyun/tsf-go/pkg/util"
@@ -122,8 +122,8 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 	defer func() {
 		var code = 200
 		if err != nil {
-			if ec, ok := err.(errCode.ErrCode); ok {
-				code = ec.Code()
+			if ec, ok := err.(*statusError.StatusError); ok {
+				code = int(ec.Code())
 			} else {
 				code = 500
 			}
@@ -157,8 +157,8 @@ func (s *Server) handleStream(srv interface{}, stream grpc.ServerStream, info *g
 	defer func() {
 		var code = 200
 		if err != nil {
-			if ec, ok := err.(errCode.ErrCode); ok {
-				code = ec.Code()
+			if ec, ok := err.(*statusError.StatusError); ok {
+				code = int(ec.Code())
 			} else {
 				code = 500
 			}

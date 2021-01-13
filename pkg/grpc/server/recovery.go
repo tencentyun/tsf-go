@@ -6,8 +6,8 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"google.golang.org/grpc"
 )
 
@@ -24,7 +24,7 @@ func (s *Server) recovery(ctx context.Context, req interface{}, info *grpc.Unary
 			pl := fmt.Sprintf("grpc server panic: %v\n%v\n%s\n", req, rerr, buf)
 			fmt.Fprintf(os.Stderr, pl)
 			log.Error(ctx, pl)
-			err = errCode.Internal
+			err = statusError.Internal("")
 		}
 	}()
 	resp, err = handler(ctx, req)
@@ -44,7 +44,7 @@ func (s *Server) recoveryStream(srv interface{}, stream grpc.ServerStream, info 
 			pl := fmt.Sprintf("grpc server panic: %v\n%v\n%s\n", srv, rerr, buf)
 			fmt.Fprintf(os.Stderr, pl)
 			log.Error(stream.Context(), pl)
-			err = errCode.Internal
+			err = statusError.Internal("")
 		}
 	}()
 	err = handler(srv, stream)

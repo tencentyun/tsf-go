@@ -9,10 +9,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/http"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
 
@@ -242,7 +242,7 @@ func (c *Consul) catalog(index int64) (services map[string]interface{}, consulIn
 	services = map[string]interface{}{}
 	header, err = c.queryCli.Get(url, &services)
 	if err != nil {
-		if errCode.NotFound.Equal(err) {
+		if statusError.IsNotFound(err) {
 			err = nil
 		} else {
 			return
@@ -252,11 +252,11 @@ func (c *Consul) catalog(index int64) (services map[string]interface{}, consulIn
 		str := header.Get("X-Consul-Index")
 		consulIndex, err = strconv.ParseInt(str, 10, 64)
 		if err != nil {
-			err = errCode.New(500, "consul index invalid: %s", str)
+			err = statusError.New(500, "consul index invalid: %s", str)
 			return
 		}
 	} else {
-		err = errCode.New(500, "consul index invalid,no http header found!")
+		err = statusError.New(500, "consul index invalid,no http header found!")
 		return
 	}
 	return
@@ -292,7 +292,7 @@ func (c *Consul) healthService(svc naming.Service, index int64) (nodes []CheckSe
 	var header xhttp.Header
 	header, err = c.queryCli.Get(url, &nodes)
 	if err != nil {
-		if errCode.NotFound.Equal(err) {
+		if statusError.IsNotFound(err) {
 			err = nil
 		} else {
 			return
@@ -302,11 +302,11 @@ func (c *Consul) healthService(svc naming.Service, index int64) (nodes []CheckSe
 		str := header.Get("X-Consul-Index")
 		consulIndex, err = strconv.ParseInt(str, 10, 64)
 		if err != nil {
-			err = errCode.New(500, "consul index invalid: %s", str)
+			err = statusError.New(500, "consul index invalid: %s", str)
 			return
 		}
 	} else {
-		err = errCode.New(500, "consul index invalid,no http header found!")
+		err = statusError.New(500, "consul index invalid,no http header found!")
 		return
 	}
 	return
@@ -418,7 +418,7 @@ func (c *Consul) Register(ins *naming.Instance) (err error) {
 			case <-timer.C:
 				err = c.heartBeat(ins)
 				if err != nil {
-					if errCode.NotFound.Equal(err) || errCode.Internal.Equal(err) {
+					if statusError.IsNotFound(err) || statusError.IsInternal(err) {
 						time.Sleep(time.Millisecond * 500)
 						// 如果注册中心报错500或者404，则重新注册
 						err = c.register(ins)
@@ -575,10 +575,10 @@ type Watcher struct {
 func (w *Watcher) Watch(ctx context.Context) (nodes []naming.Instance, err error) {
 	select {
 	case <-ctx.Done():
-		err = errCode.Deadline
+		err = statusError.Deadline("")
 		return
 	case <-w.ctx.Done():
-		err = errCode.ClientClosed
+		err = statusError.ClientClosed("")
 		return
 	case <-w.event:
 		nodes = w.svc.nodes.Load().([]naming.Instance)

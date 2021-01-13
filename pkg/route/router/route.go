@@ -9,10 +9,10 @@ import (
 
 	"github.com/tencentyun/tsf-go/pkg/config"
 	"github.com/tencentyun/tsf-go/pkg/config/consul"
-	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/route"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 
 	"go.uber.org/zap"
@@ -147,7 +147,7 @@ func (r *Router) refresh() {
 	for {
 		specs, err := r.watcher.Watch(r.ctx)
 		if err != nil {
-			if errCode.Deadline.Equal(err) || errCode.ClientClosed.Equal(err) {
+			if statusError.IsDeadline(err) || statusError.IsClientClosed(err) {
 				log.Error(context.Background(), "watch route config deadline or clsoe!exit now!", zap.Error(err))
 				return
 			}

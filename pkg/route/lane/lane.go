@@ -8,11 +8,11 @@ import (
 
 	"github.com/tencentyun/tsf-go/pkg/config"
 	"github.com/tencentyun/tsf-go/pkg/config/consul"
-	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/route"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"go.uber.org/zap"
 )
@@ -183,7 +183,7 @@ func (l *Lane) refreshAllRule() {
 	for {
 		specs, err := l.ruleWatcher.Watch(l.ctx)
 		if err != nil {
-			if errCode.Deadline.Equal(err) || errCode.ClientClosed.Equal(err) {
+			if statusError.IsDeadline(err) || statusError.IsClientClosed(err) {
 				log.Error(context.Background(), "watch lane config deadline or clsoe!exit now!", zap.Error(err))
 				return
 			}
@@ -217,7 +217,7 @@ func (l *Lane) refreshAllLane() {
 	for {
 		specs, err := l.laneWathcer.Watch(l.ctx)
 		if err != nil {
-			if errCode.Deadline.Equal(err) || errCode.ClientClosed.Equal(err) {
+			if statusError.IsDeadline(err) || statusError.IsClientClosed(err) {
 				log.Error(context.Background(), "watch lane config deadline or clsoe!exit now!", zap.Error(err))
 				return
 			}

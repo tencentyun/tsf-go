@@ -98,7 +98,6 @@ func checkConfig(t *testing.T, watcher config.Watcher, expect string) {
 		t.Logf("DeepEqual check(%+v) res(%+v) failed!not euqal", check, res)
 		t.FailNow()
 	}
-	fmt.Println(res)
 }
 
 func deleteKey(key string) error {

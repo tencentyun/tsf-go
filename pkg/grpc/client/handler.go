@@ -8,9 +8,9 @@ import (
 	"github.com/openzipkin/zipkin-go"
 	"github.com/openzipkin/zipkin-go/model"
 	"github.com/openzipkin/zipkin-go/propagation/b3"
-	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/grpc/status"
 	"github.com/tencentyun/tsf-go/pkg/meta"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 
@@ -83,8 +83,8 @@ func (c *Conn) handle(ctx context.Context, method string, req, reply interface{}
 	defer func() {
 		var code = 200
 		if err = status.FromGrpcStatus(err); err != nil {
-			if ec, ok := err.(errCode.ErrCode); ok {
-				code = ec.Code()
+			if ec, ok := err.(*statusError.StatusError); ok {
+				code = int(ec.Code())
 			} else {
 				code = 500
 			}
@@ -112,8 +112,8 @@ func (c *Conn) handleStream(ctx context.Context, desc *grpc.StreamDesc, cc *grpc
 	defer func() {
 		var code = 200
 		if err = status.FromGrpcStatus(err); err != nil {
-			if ec, ok := err.(errCode.ErrCode); ok {
-				code = ec.Code()
+			if ec, ok := err.(*statusError.StatusError); ok {
+				code = int(ec.Code())
 			} else {
 				code = 500
 			}

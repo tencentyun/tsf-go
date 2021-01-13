@@ -7,9 +7,9 @@ import (
 
 	"github.com/tencentyun/tsf-go/pkg/auth"
 	"github.com/tencentyun/tsf-go/pkg/config"
-	"github.com/tencentyun/tsf-go/pkg/errCode"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"go.uber.org/zap"
 )
 
@@ -55,12 +55,12 @@ func (a *Authenticator) Verify(ctx context.Context, method string) error {
 				return nil
 			}
 			log.Debug(ctx, "Authenticator.Verify hit blacklist,access blocked!", zap.Any("rule", rule.tagRule))
-			return errCode.Forbidden
+			return statusError.Forbidden("")
 		}
 	}
 	if authConfig.Type == "W" {
 		log.Debug(ctx, "Authenticator.Verify not hit whitelist,access blocked!")
-		return errCode.Forbidden
+		return statusError.Forbidden("")
 	}
 	return nil
 }
@@ -69,7 +69,7 @@ func (a *Authenticator) refreshRule() {
 	for {
 		specs, err := a.watcher.Watch(a.ctx)
 		if err != nil {
-			if errCode.Deadline.Equal(err) || errCode.ClientClosed.Equal(err) {
+			if statusError.IsDeadline(err) || statusError.IsClientClosed(err) {
 				log.Error(context.Background(), "watch auth config deadline or clsoe!exit now!", zap.Error(err))
 				return
 			}

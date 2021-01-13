@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"time"
 
 	"github.com/tencentyun/tsf-go/pkg/grpc/client"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 	pb "github.com/tencentyun/tsf-go/testdata"
 	"google.golang.org/grpc"
 )
@@ -31,9 +33,15 @@ func doWork() {
 		time.Sleep(time.Second * 2)
 		ctx, _ := context.WithTimeout(context.Background(), time.Second*2)
 		ctx = meta.WithUser(ctx, meta.UserPair{"user", "test2233"})
-		resp, err := greeter.SayHello(ctx, &pb.HelloRequest{Name: "lobser!"})
+		resp, err := greeter.SayHello(ctx, &pb.HelloRequest{Name: "lobster!"})
 		if err != nil {
-			log.Errorf(context.Background(), "got err: %v", err)
+			se := new(statusError.StatusError)
+			if errors.As(err, &se) {
+				log.Errorf(context.Background(), "got  statusError err: %d %s", se.Code(), se.Reason())
+
+			} else {
+				log.Errorf(context.Background(), "got other err: %v", err)
+			}
 			continue
 		}
 		log.Infof(context.Background(), "unary SayHello resp: %v", resp)

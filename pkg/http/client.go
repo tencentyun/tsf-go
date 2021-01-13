@@ -7,10 +7,9 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/errCode"
+	"github.com/tencentyun/tsf-go/pkg/statusError"
 )
 
 type Client struct {
@@ -129,7 +128,7 @@ func (c *Client) Do(method string, url string, reqBody interface{}, respBody int
 	header = resp.Header
 	if resp.StatusCode != http.StatusOK {
 		content, _ = ioutil.ReadAll(resp.Body)
-		err = errCode.New(resp.StatusCode, strconv.FormatInt(int64(resp.StatusCode), 10)+": "+string(content))
+		err = statusError.New(statusError.Code(resp.StatusCode), string(content))
 		return
 	}
 	content, err = ioutil.ReadAll(resp.Body)
