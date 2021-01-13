@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/tencentyun/tsf-go/pkg/log/logger"
+	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 
 	"github.com/natefinch/lumberjack"
@@ -28,10 +29,24 @@ func (b *Builder) Build() logger.Logger {
 	if env.LogPath() == "stdout" || env.LogPath() == "stderr" || env.LogPath() == "std" {
 		var err error
 		config := &zap.Config{
-			Level:            level,
-			Development:      false,
-			Encoding:         "console",
-			EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
+			Level:       level,
+			Development: false,
+			Encoding:    "console",
+			EncoderConfig: zapcore.EncoderConfig{
+				// Keys can be anything except the empty string.
+				TimeKey:        "ts",
+				LevelKey:       "level",
+				NameKey:        "logger",
+				CallerKey:      "caller",
+				FunctionKey:    zapcore.OmitKey,
+				MessageKey:     "msg",
+				StacktraceKey:  "stacktrace",
+				LineEnding:     zapcore.DefaultLineEnding,
+				EncodeLevel:    zapcore.CapitalLevelEncoder,
+				EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.999"),
+				EncodeDuration: zapcore.SecondsDurationEncoder,
+				EncodeCaller:   zapcore.ShortCallerEncoder,
+			},
 			OutputPaths:      []string{"stderr"},
 			ErrorOutputPaths: []string{"stderr"},
 		}
@@ -84,10 +99,16 @@ func genPrefix(ctx context.Context) string {
 	if span == nil {
 		span, _ = ctx.Value("tsf.spankey").(zipkin.Span)
 		if span == nil {
-			return ""
+			return "[] "
 		}
 	}
-	return span.Context().TraceID.String() + " "
+	traceID := span.Context().TraceID
+	spanID := span.Context().ID
+	var serverName string
+	if res := meta.Sys(ctx, meta.ServiceName); res != nil {
+		serverName = res.(string)
+	}
+	return fmt.Sprintf("[%s,%s,%s,true] ", serverName, traceID, spanID)
 }
 
 func (l *Logger) Error(ctx context.Context, msg string, fields ...zap.Field) {
