@@ -204,7 +204,7 @@ func DefaultConsul() *Consul {
 func New(conf *Config) *Consul {
 	c := &Consul{
 		queryCli:  http.NewClient(http.WithTimeout(time.Second * 90)),
-		setCli:    http.NewClient(http.WithTimeout(time.Second * 5)),
+		setCli:    http.NewClient(http.WithTimeout(time.Second * 30)),
 		registry:  make(map[string]*insInfo),
 		discovery: make(map[naming.Service]*svcInfo),
 		bc: &util.BackoffConfig{

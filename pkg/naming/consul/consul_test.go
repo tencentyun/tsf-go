@@ -24,12 +24,16 @@ var insNum int
 var nidStart int
 var consulAddr string
 var token string
+var dereg bool
+var appID string
 
 func TestMain(m *testing.M) {
 	flag.IntVar(&serviceNum, "serviceNum", 2, "-serviceNum 4")
 	flag.IntVar(&nidStart, "nidStart", 0, "-nidStart 0")
 	flag.IntVar(&nidNum, "nidNum", 2, "-nidNum 1")
 	flag.IntVar(&insNum, "insNum", 2, "-insNum 3")
+	flag.BoolVar(&dereg, "dereg", false, "-dereg false")
+	flag.StringVar(&appID, "appID", "", "-appID ")
 
 	flag.StringVar(&consulAddr, "consulAddr", "127.0.0.1:8500", "-consulAddr 127.0.0.1:8500")
 	flag.StringVar(&token, "token", "", "-token")
@@ -39,7 +43,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestConsul(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*15)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour*4)
 	defer cancel()
 	fmt.Println("param: ", serviceNum, nidStart, nidNum, insNum, consulAddr, token)
 	count := 0
@@ -49,7 +53,7 @@ func TestConsul(t *testing.T) {
 			for j := 0; j < insNum; j++ {
 				count++
 				go newClient(ctx, ch, fmt.Sprintf("namespace-test-%d", n), "server_test", fmt.Sprintf("server_test_%d_%d", i, j), i)
-				time.Sleep(time.Millisecond * 50)
+				time.Sleep(time.Millisecond * 25)
 			}
 		}
 	}
@@ -71,8 +75,8 @@ var failCount int64
 var successCount int64
 
 func newClient(ctx context.Context, ch chan struct{}, nid string, name string, insID string, idx int) {
-	serviceName := fmt.Sprintf("%s-%s-%d", nid, name, idx)
-	consul := New(&Config{Address: consulAddr, Token: token, NamespaceID: nid, AppID: "1300555551", Catalog: true})
+	serviceName := fmt.Sprintf("%s-%d", name, idx)
+	consul := New(&Config{Address: consulAddr, Token: token, NamespaceID: nid, AppID: appID, Catalog: false})
 	ins := naming.Instance{
 		ID:      insID + "-" + serviceName,
 		Service: &naming.Service{Name: serviceName},
@@ -90,7 +94,12 @@ func newClient(ctx context.Context, ch chan struct{}, nid string, name string, i
 		Tags: []string{"secure=false"},
 	}
 	for {
-		err := consul.Register(&ins)
+		var err error
+		if dereg {
+			err = consul.Deregister(&ins)
+		} else {
+			err = consul.Register(&ins)
+		}
 		if err != nil {
 			failed := atomic.AddInt64(&failCount, 1)
 			if failed > atomic.LoadInt64(&successCount) {
@@ -102,9 +111,12 @@ func newClient(ctx context.Context, ch chan struct{}, nid string, name string, i
 			break
 		}
 	}
+	if dereg {
+		ch <- struct{}{}
+	}
 	time.Sleep(time.Minute * 2)
-	for i := 0; i < 6; i++ {
-		consul.Subscribe(naming.Service{Name: fmt.Sprintf("%s-%d", name, idx+i), Namespace: "all"})
+	for i := 0; i < 3; i++ {
+		consul.Subscribe(naming.Service{Name: fmt.Sprintf("%s-%d", name, idx+i), Namespace: nid})
 	}
 	<-ctx.Done()
 	s := rand.Int63n(3000)
