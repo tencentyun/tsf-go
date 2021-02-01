@@ -7,12 +7,12 @@ import (
 )
 
 func TestDecode(t *testing.T) {
-	str := "H4sIAAAAAAAA/xzLwQrCMBAE0H/Zs6TFY35AwYMHvyC0IynEbthZEAn9d9nO5cEwM6QXr5Q8ZHK+k4OeKlrTr1pb080Ah02v8rtHG8Ou9NDArjtxvq/zHHCp+BTJ47jICi62dd90lyzPhxxn/gEAAP//BbRRR3MAAAA="
+	str := "H4sIAAAAAAAAAE1OvQ7CIBB+FXJzBXXs1pgOTYxpUl8AEQsJBQKnDE3f3WvrYHLLff8z5CLHUSeo4cyPUIH1rwD1DE+dVbIRbfDE3Y3NjA4DyyYUJqNl/4oKPjrlXXvixy0JLTpN/7A3sKbvCFXBo1RIFUsFzirts177vJxWcROlMprtW97JEWQQYy1EKYXLjeUhjeJnzeLaXdrb0B7Iwg1ODhYKfsise4mG7AKWL42lUUXmAAAA"
 	api, err := Decode(str)
 	if err != nil {
 		t.Fatalf("decode failed!err:=%v", err)
 	}
-	fmt.Println(api)
+	fmt.Println("api", api)
 }
 
 func TestEncodeDecode(t *testing.T) {

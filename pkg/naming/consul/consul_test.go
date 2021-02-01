@@ -26,17 +26,22 @@ var consulAddr string
 var token string
 var dereg bool
 var appID string
+var catalog bool
+var subscribe int
 
 func TestMain(m *testing.M) {
-	flag.IntVar(&serviceNum, "serviceNum", 2, "-serviceNum 4")
-	flag.IntVar(&nidStart, "nidStart", 0, "-nidStart 0")
-	flag.IntVar(&nidNum, "nidNum", 2, "-nidNum 1")
-	flag.IntVar(&insNum, "insNum", 2, "-insNum 3")
-	flag.BoolVar(&dereg, "dereg", false, "-dereg false")
-	flag.StringVar(&appID, "appID", "", "-appID ")
-
+	// 这两个参数必传
 	flag.StringVar(&consulAddr, "consulAddr", "127.0.0.1:8500", "-consulAddr 127.0.0.1:8500")
 	flag.StringVar(&token, "token", "", "-token")
+
+	flag.IntVar(&serviceNum, "serviceNum", 2, "-serviceNum 4")
+	flag.IntVar(&nidStart, "nidStart", 0, "-nidStart 0")
+	flag.IntVar(&nidNum, "nidNum", 1, "-nidNum 1")
+	flag.IntVar(&insNum, "insNum", 10, "-insNum 3")
+	flag.StringVar(&appID, "appID", "", "-appID ")
+	flag.BoolVar(&catalog, "catalog", true, "-catalog true")
+	flag.IntVar(&subscribe, "subscribe", 3, "-subscribe 3")
+	flag.BoolVar(&dereg, "dereg", false, "-dereg false")
 
 	flag.Parse()
 	m.Run()
@@ -76,7 +81,7 @@ var successCount int64
 
 func newClient(ctx context.Context, ch chan struct{}, nid string, name string, insID string, idx int) {
 	serviceName := fmt.Sprintf("%s-%d", name, idx)
-	consul := New(&Config{Address: consulAddr, Token: token, NamespaceID: nid, AppID: appID, Catalog: false})
+	consul := New(&Config{Address: consulAddr, Token: token, NamespaceID: nid, AppID: appID, Catalog: catalog})
 	ins := naming.Instance{
 		ID:      insID + "-" + serviceName,
 		Service: &naming.Service{Name: serviceName},
@@ -115,7 +120,7 @@ func newClient(ctx context.Context, ch chan struct{}, nid string, name string, i
 		ch <- struct{}{}
 	}
 	time.Sleep(time.Minute * 2)
-	for i := 0; i < 3; i++ {
+	for i := 0; i < subscribe; i++ {
 		consul.Subscribe(naming.Service{Name: fmt.Sprintf("%s-%d", name, idx+i), Namespace: nid})
 	}
 	<-ctx.Done()
