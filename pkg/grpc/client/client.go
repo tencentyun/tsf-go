@@ -6,7 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/grpc/balancer/wrr"
+	"github.com/tencentyun/tsf-go/pkg/balancer/random"
+	"github.com/tencentyun/tsf-go/pkg/grpc/balancer/multi"
 	"github.com/tencentyun/tsf-go/pkg/grpc/resolver"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/naming/consul"
@@ -59,12 +60,12 @@ func (c *Conn) setup(target string, block bool, o ...grpc.DialOption) error {
 	// 将consul服务发现模块注入至grpc
 	resolver.Register(consul.DefaultConsul())
 	// 将wrr负载均衡模块注入至grpc
-	balancer := composite.DefaultComposite()
-	wrr.Register(balancer)
+	router := composite.DefaultComposite()
+	multi.Register(router)
 	// 加载框架自带的middleware
 	c.Use(c.handle)
 	c.UseStream(c.handleStream)
-	c.lane = balancer.Lane()
+	c.lane = router.Lane()
 
 	c.opts = append(c.opts,
 		grpc.WithInsecure(),
@@ -88,7 +89,7 @@ func (c *Conn) setup(target string, block bool, o ...grpc.DialOption) error {
 			c.remoteService.Namespace = raw.Host
 		}
 		c.remoteService.Name = strings.TrimLeft(raw.Path, "/")
-		c.opts = append(c.opts, grpc.WithBalancerName(wrr.Name))
+		c.opts = append(c.opts, grpc.WithBalancerName(random.Name))
 	}
 	return nil
 }

@@ -15,4 +15,5 @@ type DoneInfo struct {
 // Balancer is picker
 type Balancer interface {
 	Pick(ctx context.Context, nodes []naming.Instance) (node *naming.Instance, done func(DoneInfo))
+	Schema() string
 }

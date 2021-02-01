@@ -2,6 +2,7 @@ package p2c
 
 import (
 	"context"
+	"errors"
 	"math"
 	"math/rand"
 	"sync"
@@ -13,6 +14,8 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/naming"
 )
 
+var _ balancer.Balancer = &p2cPicker{}
+
 const (
 	// The mean lifetime of `cost`, it reaches its half-life after Tau*ln(2).
 	tau = int64(time.Millisecond * 800)
@@ -20,10 +23,11 @@ const (
 	penalty = uint64(time.Second * 20)
 
 	forceGap = int64(time.Second * 3)
+
+	Name = "p2c"
 )
 
 // Name is the name of pick of two random choices balancer.
-const Name = "p2c"
 
 // NewBuilder creates a new weighted-roundrobin balancer builder.
 func NewBuilder() *Builder {
@@ -197,8 +201,10 @@ func (p *p2cPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.
 		atomic.StoreUint64(&pc.lag, uint64(lag))
 
 		success := uint64(1000) // error value ,if error set 1
-		if di.Err != nil && p.errHandler != nil {
-			if p.errHandler(di.Err) {
+		if di.Err != nil {
+			if errors.Is(context.DeadlineExceeded, di.Err) || errors.Is(context.Canceled, di.Err) {
+				success = 0
+			} else if p.errHandler != nil && p.errHandler(di.Err) {
 				success = 0
 			}
 		}
@@ -242,4 +248,8 @@ func (p *p2cPicker) printStats() {
 	if reqs > 10 {
 		log.Infof(context.Background(), "p2c %s : %+v", serverName, stats)
 	}
+}
+
+func (p *p2cPicker) Schema() string {
+	return Name
 }

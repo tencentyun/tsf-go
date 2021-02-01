@@ -10,6 +10,8 @@ import (
 
 var (
 	_ balancer.Balancer = &Picker{}
+
+	Name = "random"
 )
 
 type Picker struct {
@@ -21,4 +23,8 @@ func (p *Picker) Pick(ctx context.Context, nodes []naming.Instance) (node *namin
 	}
 	cur := rand.Intn(len(nodes))
 	return &nodes[cur], nil
+}
+
+func (p *Picker) Schema() string {
+	return Name
 }
