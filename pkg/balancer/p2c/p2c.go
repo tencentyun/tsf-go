@@ -14,7 +14,7 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/naming"
 )
 
-var _ balancer.Balancer = &p2cPicker{}
+var _ balancer.Balancer = &P2cPicker{}
 
 const (
 	// The mean lifetime of `cost`, it reaches its half-life after Tau*ln(2).
@@ -92,7 +92,7 @@ type Builder struct{}
 
 // Build p2c
 func (*Builder) Build(ctx context.Context, nodes []naming.Instance, errHandler func(error) bool) balancer.Balancer {
-	p := &p2cPicker{
+	p := &P2cPicker{
 		r:          rand.New(rand.NewSource(time.Now().UnixNano())),
 		subConns:   make(map[string]*subConn),
 		errHandler: errHandler,
@@ -104,7 +104,7 @@ func (*Builder) Build(ctx context.Context, nodes []naming.Instance, errHandler f
 	return p
 }
 
-type p2cPicker struct {
+type P2cPicker struct {
 	// subConns is the snapshot of the weighted-roundrobin balancer when this picker was
 	// created. The slice is immutable. Each Get() will do a round robin
 	// selection from it and return the selected SubConn.
@@ -116,7 +116,7 @@ type p2cPicker struct {
 }
 
 // choose two distinct nodes
-func (p *p2cPicker) prePick(nodes []naming.Instance) (nodeA *subConn, nodeB *subConn) {
+func (p *P2cPicker) prePick(nodes []naming.Instance) (nodeA *subConn, nodeB *subConn) {
 	for i := 0; i < 2; i++ {
 		p.lk.Lock()
 		a := p.r.Intn(len(nodes))
@@ -133,15 +133,16 @@ func (p *p2cPicker) prePick(nodes []naming.Instance) (nodeA *subConn, nodeB *sub
 			nodeB = newSubConn(&nodes[b])
 			p.subConns[nodeA.node.Addr()] = nodeB
 		}
+		p.lk.Unlock()
+
 		if nodeA.valid() || nodeB.valid() {
 			break
 		}
-		p.lk.Unlock()
 	}
 	return
 }
 
-func (p *p2cPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.Instance, func(di balancer.DoneInfo)) {
+func (p *P2cPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.Instance, func(di balancer.DoneInfo)) {
 	var pc, upc *subConn
 	start := time.Now().UnixNano()
 
@@ -178,6 +179,7 @@ func (p *p2cPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.
 	}
 	atomic.AddInt64(&pc.inflight, 1)
 	atomic.AddInt64(&pc.reqs, 1)
+
 	return pc.node, func(di balancer.DoneInfo) {
 		atomic.AddInt64(&pc.inflight, -1)
 		now := time.Now().UnixNano()
@@ -215,13 +217,13 @@ func (p *p2cPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.
 		logTs := atomic.LoadInt64(&p.logTs)
 		if now-logTs > int64(time.Second*3) {
 			if atomic.CompareAndSwapInt64(&p.logTs, logTs, now) {
-				p.printStats()
+				p.PrintStats()
 			}
 		}
 	}
 }
 
-func (p *p2cPicker) printStats() {
+func (p *P2cPicker) PrintStats() {
 	if len(p.subConns) == 0 {
 		return
 	}
@@ -246,10 +248,10 @@ func (p *p2cPicker) printStats() {
 		reqs += stat.reqs
 	}
 	if reqs > 10 {
-		log.Infof(context.Background(), "p2c %s : %+v", serverName, stats)
+		log.Debugf(context.Background(), "p2c %s : %+v", serverName, stats)
 	}
 }
 
-func (p *p2cPicker) Schema() string {
+func (p *P2cPicker) Schema() string {
 	return Name
 }
