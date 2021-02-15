@@ -19,10 +19,10 @@ type Picker struct {
 
 func (p *Picker) Pick(ctx context.Context, nodes []naming.Instance) (node *naming.Instance, done func(balancer.DoneInfo)) {
 	if len(nodes) == 0 {
-		return nil, nil
+		return nil, func(balancer.DoneInfo) {}
 	}
 	cur := rand.Intn(len(nodes))
-	return &nodes[cur], nil
+	return &nodes[cur], func(balancer.DoneInfo) {}
 }
 
 func (p *Picker) Schema() string {

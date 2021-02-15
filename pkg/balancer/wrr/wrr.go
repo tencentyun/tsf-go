@@ -25,7 +25,7 @@ const (
 	// if statistic not collected,we add a big lag penalty to endpoint
 	penalty = uint64(time.Second * 20)
 
-	updateGap = time.Millisecond * 500
+	updateGap = time.Millisecond * 1600
 
 	Name = "wrr"
 )
@@ -101,16 +101,18 @@ type statistic struct {
 	reqs     int64
 }
 
-// Builder is p2c Builder
+// Builder is wrr Builder
 type Builder struct{}
 
-// Build p2c
-func (*Builder) Build(ctx context.Context, nodes []naming.Instance, errHandler func(error) bool) balancer.Balancer {
+// Build wrr
+func (*Builder) Build(ctx context.Context, nodes []naming.Instance, errHandler func(error) bool, withoutFlight bool, withoutLag bool) balancer.Balancer {
 	p := &WrrPicker{
-		r:          rand.New(rand.NewSource(time.Now().UnixNano())),
-		subConns:   make(map[string]*subConn),
-		errHandler: errHandler,
-		updateAt:   time.Now().UnixNano(),
+		r:             rand.New(rand.NewSource(time.Now().UnixNano())),
+		subConns:      make(map[string]*subConn),
+		errHandler:    errHandler,
+		updateAt:      time.Now().UnixNano(),
+		withoutFlight: withoutFlight,
+		withoutLag:    withoutLag,
 	}
 	for i := range nodes {
 		p.subConns[nodes[i].Addr()] = newSubConn(&nodes[i])
@@ -129,7 +131,9 @@ type WrrPicker struct {
 	lk         sync.Mutex
 	errHandler func(err error) (isErr bool)
 
-	updateAt int64
+	updateAt      int64
+	withoutFlight bool
+	withoutLag    bool
 }
 
 func (p *WrrPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.Instance, func(di balancer.DoneInfo)) {
@@ -204,7 +208,13 @@ func (p *WrrPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.
 			total float64
 		)
 		for _, conn := range p.subConns {
-			conn.score = float64(conn.health()*1e7) / float64(conn.load())
+			if p.withoutLag {
+				conn.score = float64(conn.health() * 1e7)
+			} else {
+				conn.score = float64(conn.health()*1e7) / float64(conn.load())
+
+			}
+
 			if conn.score > 0 {
 				total += conn.score
 				count++

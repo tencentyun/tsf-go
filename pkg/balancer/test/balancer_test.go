@@ -88,6 +88,11 @@ func (s *testSubConn) connect(ctx context.Context) {
 				}
 			}
 		}
+		if len(s.wait) > 110 {
+			time.Sleep(time.Millisecond * 100)
+		} else if len(s.wait) > 100 {
+			time.Sleep(time.Millisecond * 50)
+		}
 		delay := atomic.LoadInt64(&s.delayJitter)
 		if delay > 0 {
 			delay = rand.Int63n(delay)
@@ -137,7 +142,9 @@ func newController(svrNum int, cliNum int) *controller {
 		} else if picker == "random" {
 			b = &random.Picker{}
 		} else if picker == "wrr" {
-			b = wrrBuilder.Build(context.Background(), nodes, nil)
+			b = wrrBuilder.Build(context.Background(), nodes, nil, false, false)
+		} else if picker == "wrr-flight" {
+			b = wrrBuilder.Build(context.Background(), nodes, nil, false, true)
 		}
 		clients = append(clients, b)
 	}
@@ -166,13 +173,13 @@ func (c *controller) launch(concurrency int) {
 			go func() {
 				for {
 					go func() {
-						ctx, cancel := context.WithTimeout(bkg, time.Millisecond*1000)
+						ctx, cancel := context.WithTimeout(bkg, time.Millisecond*10000)
 						sc, done := picker.Pick(ctx, c.nodes)
 						server := c.servers[sc.Addr()]
 						server.connect(ctx)
 						var err error
 						if ctx.Err() != nil {
-							err = ctx.Err()
+							err = nil
 						}
 						cancel()
 						done(balancer.DoneInfo{Err: err})
@@ -186,7 +193,7 @@ func (c *controller) launch(concurrency int) {
 
 func (c *controller) control(extraLoad, extraDelay int64) {
 	start := time.Now()
-	for j := 0; j < 20; j++ {
+	for j := 0; j < 1; j++ {
 		fmt.Printf("\n")
 		//make some chaos
 		n := chaos
@@ -205,7 +212,7 @@ func (c *controller) control(extraLoad, extraDelay int64) {
 		}
 		fmt.Printf("\n")
 
-		time.Sleep(time.Millisecond * 1000)
+		time.Sleep(time.Millisecond * 1000 * 20)
 
 		for _, picker := range c.clients {
 			p, ok := picker.(balancer.Printable)
@@ -222,13 +229,21 @@ func (c *controller) control(extraLoad, extraDelay int64) {
 	}
 	gap := time.Since(start)
 	fmt.Printf("\n")
-
+	var reqTotal int64
+	var lagTotal uint64
 	for _, sc := range c.servers {
 		req := atomic.LoadInt64(&sc.reqs)
+		reqTotal += req
 		lag := atomic.LoadUint64(&sc.lag)
+		lagTotal += lag
 		lagAvg := float64(lag) / float64(req)
 		qps := float64(req) / gap.Seconds()
 		wait := len(sc.wait)
+
 		fmt.Printf("%s qps:%v lag:%v waits:%d\n", sc.node.Addr(), qps, lagAvg, wait)
 	}
+
+	fmt.Println("req:", float64(reqTotal)/gap.Seconds())
+	fmt.Println("lag:", float64(lagTotal)/float64(reqTotal))
+
 }
