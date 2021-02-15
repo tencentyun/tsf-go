@@ -20,6 +20,7 @@ var concurrency int
 var extraLoad int64
 var extraDelay int64
 var extraWeight uint64
+var chaos int
 
 func init() {
 	flag.IntVar(&serverNum, "snum", 6, "-snum 6")
@@ -27,14 +28,16 @@ func init() {
 	flag.IntVar(&concurrency, "concurrency", 10, "-cc 10")
 	flag.Int64Var(&extraLoad, "exload", 3, "-exload 3")
 	flag.Int64Var(&extraDelay, "exdelay", 250, "-exdelay 250")
+	flag.IntVar(&chaos, "chaos", 2, "-chaos 2")
+
 }
 
 type testSubConn struct {
 	node naming.Instance
 	wait chan struct{}
 	//statics
-	reqs    int64
-	prevReq int64
+	reqs int64
+	lag  uint64
 	//control params
 	loadJitter  int64
 	delayJitter int64
@@ -47,10 +50,10 @@ func newTestSubConn(addr string) (sc *testSubConn) {
 	}
 	go func() {
 		for {
-			for i := 0; i < 210; i++ {
+			for i := 0; i < 100; i++ {
 				<-sc.wait
 			}
-			time.Sleep(time.Millisecond * 20)
+			time.Sleep(time.Millisecond * 10)
 		}
 	}()
 
@@ -58,10 +61,9 @@ func newTestSubConn(addr string) (sc *testSubConn) {
 }
 
 func (s *testSubConn) connect(ctx context.Context) {
-
-	time.Sleep(time.Millisecond * 15)
+	start := time.Now()
+	time.Sleep(time.Millisecond * 10)
 	//add qps counter when request come in
-	atomic.AddInt64(&s.reqs, 1)
 	select {
 	case <-ctx.Done():
 		return
@@ -82,7 +84,8 @@ func (s *testSubConn) connect(ctx context.Context) {
 		delay = rand.Int63n(delay)
 		time.Sleep(time.Millisecond * time.Duration(delay))
 	}
-
+	atomic.AddInt64(&s.reqs, 1)
+	atomic.AddUint64(&s.lag, uint64(time.Since(start).Milliseconds()))
 }
 
 func TestChaosPick(t *testing.T) {
@@ -144,11 +147,10 @@ func (c *controller) launch(concurrency int) {
 			picker := c.clients[i]
 			go func() {
 				for {
-					ctx, cancel := context.WithTimeout(bkg, time.Millisecond*250)
+					ctx, cancel := context.WithTimeout(bkg, time.Millisecond*1000)
 					sc, done := picker.Pick(ctx, c.nodes)
 					server := c.servers[sc.Addr()]
 					server.connect(ctx)
-
 					var err error
 					if ctx.Err() != nil {
 						err = ctx.Err()
@@ -163,13 +165,11 @@ func (c *controller) launch(concurrency int) {
 }
 
 func (c *controller) control(extraLoad, extraDelay int64) {
-	var chaos int
 	for {
 		fmt.Printf("\n")
 		//make some chaos
-		n := rand.Intn(3)
-		chaos = n + 1
-		for i := 0; i < chaos; i++ {
+		n := rand.Intn(chaos + 1)
+		for i := 0; i < n; i++ {
 			if extraLoad > 0 {
 				degree := rand.Int63n(extraLoad)
 				degree++
@@ -182,26 +182,33 @@ func (c *controller) control(extraLoad, extraDelay int64) {
 				fmt.Printf("set addr_%d delay:%dms ", i, degree)
 			}
 		}
-		fmt.Printf("\n")
-		sleep := int64(5)
-		time.Sleep(time.Second * time.Duration(sleep))
-		for _, sc := range c.servers {
-			req := atomic.LoadInt64(&sc.reqs)
-			qps := (req - sc.prevReq) / sleep
-			wait := len(sc.wait)
-			sc.prevReq = req
-			fmt.Printf("%s qps:%d waits:%d\n", sc.node.Addr(), qps, wait)
+
+		for i := range c.serverSet {
+			sc := c.serverSet[i]
+			atomic.StoreInt64(&sc.reqs, 0)
+			atomic.StoreUint64(&sc.lag, 0)
 		}
-		for _, picker := range c.clients {
+		sleep := int64(10)
+		time.Sleep(time.Second * 10)
+		fmt.Printf("\n")
+		for _, sc := range c.servers {
+			req := atomic.SwapInt64(&sc.reqs, 0)
+			lag := atomic.SwapUint64(&sc.lag, 0)
+			lagAvg := float64(lag) / float64(req)
+			qps := req / sleep
+			wait := len(sc.wait)
+			fmt.Printf("%s qps:%d lag:%v waits:%d\n", sc.node.Addr(), qps, lagAvg, wait)
+		}
+		/*for _, picker := range c.clients {
 			p := picker.(*p2c.P2cPicker)
 			p.PrintStats()
-		}
+		}*/
 		fmt.Printf("\n")
 		//reset chaos
-		for i := 0; i < chaos; i++ {
+		for i := range c.serverSet {
 			atomic.StoreInt64(&c.serverSet[i].loadJitter, 0)
 			atomic.StoreInt64(&c.serverSet[i].delayJitter, 0)
 		}
-		chaos = 0
+		time.Sleep(time.Second * 3)
 	}
 }
