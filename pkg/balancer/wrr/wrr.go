@@ -1,4 +1,4 @@
-package p2c
+package wrr
 
 import (
 	"context"
@@ -14,17 +14,22 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/naming"
 )
 
-var _ balancer.Balancer = &P2cPicker{}
+var (
+	_ balancer.Balancer  = &WrrPicker{}
+	_ balancer.Printable = &WrrPicker{}
+)
 
 const (
 	// The mean lifetime of `cost`, it reaches its half-life after Tau*ln(2).
-	tau = int64(time.Millisecond * 400)
+	tau = int64(time.Millisecond * 200)
 	// if statistic not collected,we add a big lag penalty to endpoint
 	penalty = uint64(time.Second * 20)
 
 	forceGap = int64(time.Second * 3)
 
-	Name = "p2c"
+	updateGap = time.Millisecond * 500
+
+	Name = "wrr"
 )
 
 // Name is the name of pick of two random choices balancer.
@@ -48,6 +53,11 @@ type subConn struct {
 	pick int64
 	// request number in a period time
 	reqs int64
+
+	score float64
+
+	// current weight
+	cwt float64
 }
 
 func newSubConn(node *naming.Instance) *subConn {
@@ -59,20 +69,26 @@ func newSubConn(node *naming.Instance) *subConn {
 	}
 }
 
-func (sc *subConn) valid() bool {
-	return sc.health() >= 500
-}
-
 func (sc *subConn) health() uint64 {
 	return atomic.LoadUint64(&sc.success)
 }
 
+func (sc *subConn) EWT() float64 {
+	if sc.score == 0 {
+		return 100 / float64(sc.inFlight())
+	}
+	return sc.score / float64(sc.inFlight())
+}
+
+func (sc *subConn) inFlight() int64 {
+	return atomic.LoadInt64(&sc.inflight)
+}
+
 func (sc *subConn) load() uint64 {
-	lag := uint64(atomic.LoadUint64(&sc.lag)) + 1
-	load := lag * uint64(atomic.LoadInt64(&sc.inflight))
+	load := uint64(atomic.LoadUint64(&sc.lag) + 1)
 	if load == 0 {
 		// penalty是初始化没有数据时的惩罚值，默认为1e9 * 20
-		load = penalty * uint64(atomic.LoadInt64(&sc.inflight))
+		load = penalty
 	}
 	return load
 }
@@ -92,10 +108,11 @@ type Builder struct{}
 
 // Build p2c
 func (*Builder) Build(ctx context.Context, nodes []naming.Instance, errHandler func(error) bool) balancer.Balancer {
-	p := &P2cPicker{
+	p := &WrrPicker{
 		r:          rand.New(rand.NewSource(time.Now().UnixNano())),
 		subConns:   make(map[string]*subConn),
 		errHandler: errHandler,
+		updateAt:   time.Now().UnixNano(),
 	}
 	for i := range nodes {
 		p.subConns[nodes[i].Addr()] = newSubConn(&nodes[i])
@@ -104,7 +121,7 @@ func (*Builder) Build(ctx context.Context, nodes []naming.Instance, errHandler f
 	return p
 }
 
-type P2cPicker struct {
+type WrrPicker struct {
 	// subConns is the snapshot of the weighted-roundrobin balancer when this picker was
 	// created. The slice is immutable. Each Get() will do a round robin
 	// selection from it and return the selected SubConn.
@@ -113,70 +130,33 @@ type P2cPicker struct {
 	r          *rand.Rand
 	lk         sync.Mutex
 	errHandler func(err error) (isErr bool)
+
+	updateAt int64
 }
 
-// choose two distinct nodes
-func (p *P2cPicker) prePick(nodes []naming.Instance) (nodeA *subConn, nodeB *subConn) {
-	for i := 0; i < 2; i++ {
-		p.lk.Lock()
-		a := p.r.Intn(len(nodes))
-		b := p.r.Intn(len(nodes) - 1)
-		if b >= a {
-			b = b + 1
-		}
-		nodeA, nodeB = p.subConns[nodes[a].Addr()], p.subConns[nodes[b].Addr()]
-		if nodeA == nil {
-			nodeA = newSubConn(&nodes[a])
-			p.subConns[nodeA.node.Addr()] = nodeA
-		}
-		if nodeB == nil {
-			nodeB = newSubConn(&nodes[b])
-			p.subConns[nodeA.node.Addr()] = nodeB
-		}
-		p.lk.Unlock()
-
-		if nodeA.valid() || nodeB.valid() {
-			break
-		}
-	}
-	return
-}
-
-func (p *P2cPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.Instance, func(di balancer.DoneInfo)) {
-	var pc, upc *subConn
-	start := time.Now().UnixNano()
+func (p *WrrPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.Instance, func(di balancer.DoneInfo)) {
+	var (
+		pc          *subConn
+		totalWeight float64
+	)
 
 	if len(nodes) == 0 {
 		return nil, func(di balancer.DoneInfo) {}
-	} else if len(nodes) == 1 {
-		p.lk.Lock()
-		pc = p.subConns[nodes[0].Addr()]
-		if pc == nil {
-			pc = newSubConn(&nodes[0])
-			p.subConns[nodes[0].Addr()] = pc
-		}
-		p.lk.Unlock()
-	} else {
-		nodeA, nodeB := p.prePick(nodes)
-		// meta.Weight为服务发布者在disocvery中设置的权重
-		if nodeA.load()*nodeB.health() > nodeB.load()*nodeA.health() {
-			pc, upc = nodeB, nodeA
-		} else {
-			pc, upc = nodeA, nodeB
-		}
-		// 如果选中的节点，在forceGap期间内没有被选中一次，那么强制一次
-		// 利用强制的机会，来触发成功率、延迟的衰减
-		// 原子锁conn.pick保证并发安全，放行一次
-		pick := atomic.LoadInt64(&upc.pick)
-		if start-pick > forceGap && atomic.CompareAndSwapInt64(&upc.pick, pick, start) {
-			pc = upc
-		}
 	}
+	start := time.Now().UnixNano()
 
-	// 节点未发生切换才更新pick时间
-	if pc != upc {
-		atomic.StoreInt64(&pc.pick, start)
+	p.lk.Lock()
+	// nginx wrr load balancing algorithm: http://blog.csdn.net/zhangskd/article/details/50194069
+	for _, sc := range p.subConns {
+		ewt := sc.EWT()
+		totalWeight += ewt
+		sc.cwt += ewt
+		if pc == nil || pc.cwt < sc.cwt {
+			pc = sc
+		}
 	}
+	pc.cwt -= totalWeight
+	p.lk.Unlock()
 	atomic.AddInt64(&pc.inflight, 1)
 	atomic.AddInt64(&pc.reqs, 1)
 
@@ -214,16 +194,40 @@ func (p *P2cPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.
 		success = uint64(float64(oldSuc)*w + float64(success)*(1.0-w))
 		atomic.StoreUint64(&pc.success, success)
 
-		logTs := atomic.LoadInt64(&p.logTs)
-		if now-logTs > int64(time.Second*3) {
-			if atomic.CompareAndSwapInt64(&p.logTs, logTs, now) {
-				p.PrintStats()
+		u := atomic.LoadInt64(&p.updateAt)
+		if now-u < int64(updateGap) {
+			return
+		}
+		if !atomic.CompareAndSwapInt64(&p.updateAt, u, now) {
+			return
+		}
+		var (
+			count int
+			total float64
+		)
+		for _, conn := range p.subConns {
+			conn.score = float64(conn.health()*1e7) / float64(conn.load())
+			if conn.score > 0 {
+				total += conn.score
+				count++
 			}
 		}
+		// count must be greater than 1,otherwise will lead ewt to 0
+		if count < 2 {
+			return
+		}
+		avgscore := total / float64(count)
+		p.lk.Lock()
+		for _, conn := range p.subConns {
+			if conn.score <= 0 {
+				conn.score = avgscore / 4
+			}
+		}
+		p.lk.Unlock()
 	}
 }
 
-func (p *P2cPicker) PrintStats() {
+func (p *WrrPicker) PrintStats() {
 	if len(p.subConns) == 0 {
 		return
 	}
@@ -248,10 +252,10 @@ func (p *P2cPicker) PrintStats() {
 		reqs += stat.reqs
 	}
 	if reqs > 10 {
-		log.Debugf(context.Background(), "p2c %s : %+v", serverName, stats)
+		log.Infof(context.Background(), "p2c %s : %+v", serverName, stats)
 	}
 }
 
-func (p *P2cPicker) Schema() string {
+func (p *WrrPicker) Schema() string {
 	return Name
 }
