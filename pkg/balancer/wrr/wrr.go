@@ -21,11 +21,9 @@ var (
 
 const (
 	// The mean lifetime of `cost`, it reaches its half-life after Tau*ln(2).
-	tau = int64(time.Millisecond * 200)
+	tau = int64(time.Millisecond * 100)
 	// if statistic not collected,we add a big lag penalty to endpoint
 	penalty = uint64(time.Second * 20)
-
-	forceGap = int64(time.Second * 3)
 
 	updateGap = time.Millisecond * 500
 
@@ -252,7 +250,7 @@ func (p *WrrPicker) PrintStats() {
 		reqs += stat.reqs
 	}
 	if reqs > 10 {
-		log.Infof(context.Background(), "p2c %s : %+v", serverName, stats)
+		log.Debugf(context.Background(), "p2c %s : %+v", serverName, stats)
 	}
 }
 

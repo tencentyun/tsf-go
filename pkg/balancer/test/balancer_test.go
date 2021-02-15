@@ -30,8 +30,8 @@ func init() {
 	flag.IntVar(&cliNum, "cnum", 6, "-cnum 12")
 	flag.IntVar(&concurrency, "concurrency", 18, "-cc 10")
 	flag.Int64Var(&extraLoad, "exload", 2, "-exload 3")
-	flag.Int64Var(&extraDelay, "exdelay", 20, "-exdelay 250")
-	flag.IntVar(&chaos, "chaos", 1, "-chaos 2")
+	flag.Int64Var(&extraDelay, "exdelay", 80, "-exdelay 250")
+	flag.IntVar(&chaos, "chaos", 1, "-chaos 1")
 	flag.StringVar(&picker, "picker", "wrr", "-picker p2c")
 }
 
@@ -49,13 +49,13 @@ type testSubConn struct {
 func newTestSubConn(addr string) (sc *testSubConn) {
 	sc = &testSubConn{
 		node: naming.Instance{Host: addr, Port: 8080, Service: &naming.Service{Name: "test-svr"}},
-		wait: make(chan struct{}, 100),
+		wait: make(chan struct{}, 120),
 	}
 	for i := 0; i < 20; i++ {
 		go func() {
 			for {
 				<-sc.wait
-				if len(sc.wait) > 95 {
+				if len(sc.wait) > 110 {
 					time.Sleep(time.Millisecond * 10)
 				} else if len(sc.wait) > 90 {
 					time.Sleep(time.Millisecond * 5)
@@ -64,13 +64,12 @@ func newTestSubConn(addr string) (sc *testSubConn) {
 			}
 		}()
 	}
-
 	return
 }
 
 func (s *testSubConn) connect(ctx context.Context) {
 	start := time.Now()
-	time.Sleep(time.Millisecond * 20)
+	time.Sleep(time.Millisecond * 100)
 	//add qps counter when request come in
 	select {
 	case <-ctx.Done():
@@ -78,7 +77,7 @@ func (s *testSubConn) connect(ctx context.Context) {
 	case s.wait <- struct{}{}:
 	}
 	should := rand.Intn(100)
-	if should < 12 {
+	if should < 9 {
 		load := atomic.LoadInt64(&s.loadJitter)
 		if load > 0 {
 			for i := 0; i <= rand.Intn(int(load)); i++ {

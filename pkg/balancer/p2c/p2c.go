@@ -18,7 +18,7 @@ var _ balancer.Balancer = &P2cPicker{}
 
 const (
 	// The mean lifetime of `cost`, it reaches its half-life after Tau*ln(2).
-	tau = int64(time.Millisecond * 400)
+	tau = int64(time.Millisecond * 100)
 	// if statistic not collected,we add a big lag penalty to endpoint
 	penalty = uint64(time.Second * 20)
 
