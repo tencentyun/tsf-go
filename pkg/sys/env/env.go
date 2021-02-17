@@ -6,33 +6,35 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 
 	"go.uber.org/zap"
 )
 
 var (
-	logLevel        int
-	logPath         string
-	tracePath       string
-	monitorPath     string
-	consulHost      string
-	consulPort      int
-	instanceId      string
-	token           string
-	localIP         string
-	namespaceID     string
-	applicationID   string
-	groupID         string
-	progVersion     string
-	region          string
-	zone            string
-	serviceName     string
-	port            int
-	disableGrpcHttp bool
-	gopsPort        int
-	pprofPort       int
-	disableGops     bool
-	disablePprof    bool
+	logLevel          int
+	logPath           string
+	tracePath         string
+	monitorPath       string
+	consulAddressList string
+	consulHost        string
+	consulPort        int
+	instanceId        string
+	token             string
+	localIP           string
+	namespaceID       string
+	applicationID     string
+	groupID           string
+	progVersion       string
+	region            string
+	zone              string
+	serviceName       string
+	port              int
+	disableGrpcHttp   bool
+	gopsPort          int
+	pprofPort         int
+	disableGops       bool
+	disablePprof      bool
 
 	sshUser    string
 	sshHost    string
@@ -94,6 +96,13 @@ func ConsulPort() int {
 		return 8500
 	}
 	return consulPort
+}
+func ConsulAddressList() []string {
+	if consulAddressList == "" {
+		return []string{fmt.Sprintf("%s:%d", ConsulHost(), ConsulPort())}
+	}
+
+	return strings.Split(consulAddressList, ",")
 }
 
 func InstanceId() string {
@@ -218,6 +227,7 @@ func init() {
 	flag.StringVar(&tracePath, "tsf_trace_path", os.Getenv("tsf_trace_path"), "-tsf_trace_path ./trace")
 	flag.StringVar(&monitorPath, "tsf_monitor_path", os.Getenv("tsf_monitor_path"), "-tsf_monitor_path ./monitor")
 	flag.StringVar(&consulHost, "tsf_consul_ip", os.Getenv("tsf_consul_ip"), "-tsf_consul_ip 127.0.0.1")
+	flag.StringVar(&consulAddressList, "tsf_consul_list", os.Getenv("tsf_consul_list"), "-tsf_consul_list 127.0.0.1:8080")
 	flag.IntVar(&consulPort, "tsf_consul_port", parseInt(os.Getenv("tsf_consul_port")), "-tsf_consul_port 85000")
 	flag.StringVar(&instanceId, "tsf_instance_id", os.Getenv("tsf_instance_id"), "-tsf_instance_id xxx")
 	flag.StringVar(&token, "tsf_token", os.Getenv("tsf_token"), "-tsf_token xxx")

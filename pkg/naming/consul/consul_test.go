@@ -81,7 +81,7 @@ var successCount int64
 
 func newClient(ctx context.Context, ch chan struct{}, nid string, name string, insID string, idx int) {
 	serviceName := fmt.Sprintf("%s-%d", name, idx)
-	consul := New(&Config{Address: consulAddr, Token: token, NamespaceID: nid, AppID: appID, Catalog: catalog})
+	consul := New(&Config{Address: []string{consulAddr}, Token: token, NamespaceID: nid, AppID: appID, Catalog: catalog})
 	ins := naming.Instance{
 		ID:      insID + "-" + serviceName,
 		Service: &naming.Service{Name: serviceName},

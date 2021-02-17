@@ -3,6 +3,7 @@ package consul
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	xhttp "net/http"
 	"strconv"
 	"sync"
@@ -156,7 +157,7 @@ type ServiceDefinition struct {
 }
 
 type Config struct {
-	Address string
+	Address []string
 	Token   string
 	// additional message:tsf namespaceid and tencent appid if exsist
 	AppID       string
@@ -196,7 +197,7 @@ func DefaultConsul() *Consul {
 	mu.Lock()
 	defer mu.Unlock()
 	if defaultConsul == nil {
-		defaultConsul = New(&Config{Address: fmt.Sprintf("%s:%d", env.ConsulHost(), env.ConsulPort()), Token: env.Token()})
+		defaultConsul = New(&Config{Address: env.ConsulAddressList(), Token: env.Token()})
 	}
 	return defaultConsul
 }
@@ -224,9 +225,18 @@ func New(conf *Config) *Consul {
 func (c *Consul) Scheme() string {
 	return "consul"
 }
+func (c *Consul) addr() string {
+	if len(c.conf.Address) == 0 {
+		return ""
+	} else if len(c.conf.Address) == 1 {
+		return c.conf.Address[0]
+	}
+
+	return c.conf.Address[rand.Intn(len(c.conf.Address))]
+}
 
 func (c *Consul) catalog(index int64) (services map[string]interface{}, consulIndex int64, err error) {
-	url := fmt.Sprintf("http://%s/v1/catalog/services?token=%s&wait=55s&index=%d", c.conf.Address, c.conf.Token, index)
+	url := fmt.Sprintf("http://%s/v1/catalog/services?token=%s&wait=55s&index=%d", c.addr(), c.conf.Token, index)
 	if c.conf.NamespaceID != "" {
 		url += "&nid=" + c.conf.NamespaceID
 	}
@@ -263,7 +273,7 @@ func (c *Consul) catalog(index int64) (services map[string]interface{}, consulIn
 }
 
 func (c *Consul) healthService(svc naming.Service, index int64) (nodes []CheckServiceNode, consulIndex int64, err error) {
-	url := fmt.Sprintf("http://%s/v1/health/service/%s?token=%s&passing&wait=55s&index=%d", c.conf.Address, svc.Name, c.conf.Token, index)
+	url := fmt.Sprintf("http://%s/v1/health/service/%s?token=%s&passing&wait=55s&index=%d", c.addr(), svc.Name, c.conf.Token, index)
 	/*if svc.NameSpace == "global" {
 		url += "&nsType=GLOBAL"
 	} else if svc.NameSpace == "all" {
@@ -325,7 +335,7 @@ func (c *Consul) register(ins *naming.Instance) (err error) {
 		},
 		Tags: ins.Tags,
 	}
-	url := fmt.Sprintf("http://%s/v1/agent/service/register?token=%s", c.conf.Address, c.conf.Token)
+	url := fmt.Sprintf("http://%s/v1/agent/service/register?token=%s", c.addr(), c.conf.Token)
 	if c.conf.NamespaceID != "" {
 		url += "&nid=" + c.conf.NamespaceID
 	}
@@ -342,7 +352,7 @@ func (c *Consul) register(ins *naming.Instance) (err error) {
 }
 
 func (c *Consul) heartBeat(ins *naming.Instance) (err error) {
-	url := fmt.Sprintf("http://%s/v1/agent/check/pass/%s?token=%s", c.conf.Address, checkID(ins), c.conf.Token)
+	url := fmt.Sprintf("http://%s/v1/agent/check/pass/%s?token=%s", c.addr(), checkID(ins), c.conf.Token)
 	if c.conf.NamespaceID != "" {
 		url += "&nid=" + c.conf.NamespaceID
 	}
@@ -357,7 +367,7 @@ func (c *Consul) heartBeat(ins *naming.Instance) (err error) {
 }
 
 func (c *Consul) deregister(ins *naming.Instance) (err error) {
-	url := fmt.Sprintf("http://%s/v1/agent/service/deregister/%s?token=%s", c.conf.Address, ins.ID, c.conf.Token)
+	url := fmt.Sprintf("http://%s/v1/agent/service/deregister/%s?token=%s", c.addr(), ins.ID, c.conf.Token)
 	if c.conf.NamespaceID != "" {
 		url += "&nid=" + c.conf.NamespaceID
 	}

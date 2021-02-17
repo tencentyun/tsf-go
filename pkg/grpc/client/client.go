@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/balancer/random"
+	"github.com/tencentyun/tsf-go/pkg/balancer/p2c"
 	"github.com/tencentyun/tsf-go/pkg/grpc/balancer/multi"
 	"github.com/tencentyun/tsf-go/pkg/grpc/resolver"
 	"github.com/tencentyun/tsf-go/pkg/naming"
@@ -89,7 +89,7 @@ func (c *Conn) setup(target string, block bool, o ...grpc.DialOption) error {
 			c.remoteService.Namespace = raw.Host
 		}
 		c.remoteService.Name = strings.TrimLeft(raw.Path, "/")
-		c.opts = append(c.opts, grpc.WithBalancerName(random.Name))
+		c.opts = append(c.opts, grpc.WithBalancerName(p2c.Name))
 	}
 	return nil
 }
