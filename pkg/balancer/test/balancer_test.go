@@ -11,6 +11,7 @@ import (
 
 	"github.com/tencentyun/tsf-go/pkg/balancer"
 	"github.com/tencentyun/tsf-go/pkg/balancer/p2c"
+	"github.com/tencentyun/tsf-go/pkg/balancer/p2ce"
 	"github.com/tencentyun/tsf-go/pkg/balancer/random"
 	"github.com/tencentyun/tsf-go/pkg/balancer/wrr"
 	"github.com/tencentyun/tsf-go/pkg/naming"
@@ -133,6 +134,7 @@ func newController(svrNum int, cliNum int) *controller {
 	var clients []balancer.Balancer
 
 	p2cBuilder := p2c.NewBuilder()
+	p2ceBuilder := p2ce.NewBuilder()
 	wrrBuilder := wrr.NewBuilder()
 
 	for i := 0; i < cliNum; i++ {
@@ -145,6 +147,8 @@ func newController(svrNum int, cliNum int) *controller {
 			b = wrrBuilder.Build(context.Background(), nodes, nil, false, false)
 		} else if picker == "wrr-flight" {
 			b = wrrBuilder.Build(context.Background(), nodes, nil, false, true)
+		} else if picker == "p2ce" {
+			b = p2ceBuilder.Build(context.Background(), nodes, nil)
 		}
 		clients = append(clients, b)
 	}

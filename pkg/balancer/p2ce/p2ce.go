@@ -104,6 +104,7 @@ func (sc *subConn) load(now int64) uint64 {
 				gap := half - total/2
 				if gap > 0 {
 					avgLag = int64(lags[i])
+					break
 				}
 			}
 			avgLag++
@@ -152,9 +153,11 @@ type statistic struct {
 	addr     string
 	score    float64
 	cs       uint64
-	lantency int64
+	lantency time.Duration
+	load     uint64
 	inflight int64
 	reqs     int64
+	predict  time.Duration
 }
 
 // Builder is p2c Builder
@@ -328,12 +331,10 @@ func (p *P2cPicker) PrintStats() {
 		stat.addr = conn.node.Addr()
 		stat.cs = atomic.LoadUint64(&conn.success)
 		stat.inflight = atomic.LoadInt64(&conn.inflight)
-		stat.lantency = atomic.LoadInt64(&conn.lag)
+		stat.lantency = time.Duration(atomic.LoadInt64(&conn.lag))
 		stat.reqs = atomic.SwapInt64(&conn.reqs, 0)
-		load := conn.load(now)
-		if load != 0 {
-			stat.score = float64(stat.cs*1e8) / float64(load)
-		}
+		stat.load = conn.load(now)
+		stat.predict = time.Duration(atomic.LoadInt64(&conn.predict))
 		stats = append(stats, stat)
 		if serverName == "" {
 			serverName = conn.node.Service.Name
@@ -341,7 +342,7 @@ func (p *P2cPicker) PrintStats() {
 		reqs += stat.reqs
 	}
 	if reqs > 10 {
-		log.Debugf(context.Background(), "p2c %s : %+v", serverName, stats)
+		log.Infof(context.Background(), "p2c %s : %+v", serverName, stats)
 	}
 }
 
