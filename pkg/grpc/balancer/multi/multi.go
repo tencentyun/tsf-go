@@ -7,6 +7,7 @@ import (
 	"github.com/openzipkin/zipkin-go"
 	tBalancer "github.com/tencentyun/tsf-go/pkg/balancer"
 	"github.com/tencentyun/tsf-go/pkg/balancer/p2c"
+	"github.com/tencentyun/tsf-go/pkg/balancer/p2ce"
 	"github.com/tencentyun/tsf-go/pkg/balancer/random"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
@@ -35,6 +36,8 @@ func init() {
 	// random
 	balancers = append(balancers, &random.Picker{})
 
+	b2 := p2ce.Builder{}
+	balancers = append(balancers, b2.Build(context.Background(), nil, nil))
 }
 
 // Register register balancer builder if nil.
