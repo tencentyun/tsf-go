@@ -20,7 +20,7 @@ var _ balancer.Balancer = &P2cPicker{}
 
 const (
 	// The mean lifetime of `cost`, it reaches its half-life after Tau*ln(2).
-	tau = int64(time.Millisecond * 400)
+	tau = int64(time.Millisecond * 600)
 	// if statistic not collected,we add a big lag penalty to endpoint
 	penalty = uint64(time.Second * 20)
 
@@ -88,30 +88,14 @@ func (sc *subConn) health() uint64 {
 }
 
 func (sc *subConn) load(now int64) uint64 {
+	avgLag := atomic.LoadInt64(&sc.lag) + 1
+
 	lastPredictTs := atomic.LoadInt64(&sc.predictTs)
+
 	if now-lastPredictTs > int64(time.Millisecond*10) {
 		if atomic.CompareAndSwapInt64(&sc.predictTs, lastPredictTs, now) {
-			var counts [10]int64
 			var total int64
-			var avgLag int64
-			for i := range sc.lags {
-				counts[i] = int64(sc.lags[i].Sum())
-				total += counts[i]
-			}
-			var half int64
-			for i, value := range counts {
-				half += value
-				gap := half - total/2
-				if gap > 0 {
-					avgLag = int64(lags[i])
-					break
-				}
-			}
-			avgLag++
-			atomic.StoreInt64(&sc.lag, avgLag)
-
 			var count int
-			total = 0
 			var predict int64
 			sc.lk.RLock()
 			first := sc.inflights.Front()
@@ -135,7 +119,6 @@ func (sc *subConn) load(now int64) uint64 {
 		}
 	}
 
-	avgLag := atomic.LoadInt64(&sc.lag)
 	predict := atomic.LoadInt64(&sc.predict)
 	if predict > avgLag {
 		avgLag = predict
@@ -275,27 +258,12 @@ func (p *P2cPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.
 		if lag < 0 {
 			lag = 0
 		}
-		if time.Duration(lag) < time.Millisecond*2 {
-			pc.lags[0].Add(1)
-		} else if time.Duration(lag) < time.Millisecond*5 {
-			pc.lags[1].Add(1)
-		} else if time.Duration(lag) < time.Millisecond*20 {
-			pc.lags[2].Add(1)
-		} else if time.Duration(lag) < time.Millisecond*50 {
-			pc.lags[3].Add(1)
-		} else if time.Duration(lag) < time.Millisecond*100 {
-			pc.lags[4].Add(1)
-		} else if time.Duration(lag) < time.Millisecond*200 {
-			pc.lags[5].Add(1)
-		} else if time.Duration(lag) < time.Millisecond*400 {
-			pc.lags[6].Add(1)
-		} else if time.Duration(lag) < time.Millisecond*800 {
-			pc.lags[7].Add(1)
-		} else if time.Duration(lag) < time.Millisecond*1600 {
-			pc.lags[8].Add(1)
-		} else {
-			pc.lags[9].Add(1)
+		oldLag := atomic.LoadInt64(&pc.lag)
+		if oldLag == 0 {
+			w = 0.0
 		}
+		lag = int64(float64(oldLag)*w + float64(lag)*(1.0-w))
+		atomic.StoreInt64(&pc.lag, int64(lag))
 
 		success := uint64(1000) // error value ,if error set 1
 		if di.Err != nil {
