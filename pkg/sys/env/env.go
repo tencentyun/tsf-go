@@ -35,6 +35,7 @@ var (
 	pprofPort         int
 	disableGops       bool
 	disablePprof      bool
+	serviceToken      string
 
 	sshUser    string
 	sshHost    string
@@ -221,6 +222,10 @@ func GopsPort() int {
 	return gopsPort
 }
 
+func ServiceToken() string {
+	return serviceToken
+}
+
 func init() {
 	flag.IntVar(&logLevel, "tsf_log_level", parseInt(os.Getenv("tsf_log_level")), "-tsf_log_level 0")
 	flag.StringVar(&logPath, "tsf_log_path", os.Getenv("tsf_log_path"), "-tsf_log_path stdout")
@@ -245,6 +250,7 @@ func init() {
 	flag.BoolVar(&disablePprof, "tsf_disable_pprof", parseBool(os.Getenv("tsf_disable_pprof")), "-tsf_disable_pprof false")
 	flag.IntVar(&pprofPort, "tsf_pprof_port", parseInt(os.Getenv("tsf_pprof_port")), "-tsf_pprof_port 47077")
 	flag.IntVar(&gopsPort, "tsf_gops_port", parseInt(os.Getenv("tsf_gops_port")), "-tsf_gops_port 46066")
+	flag.StringVar(&serviceToken, "polaris_service_token", os.Getenv("polaris_service_token"), "-polaris_service_token xxx")
 
 	flag.StringVar(&sshUser, "ssh_user", os.Getenv("ssh_user"), "-ssh_user root")
 	flag.StringVar(&sshHost, "ssh_host", os.Getenv("ssh_host"), "-ssh_host 127.0.0.1")

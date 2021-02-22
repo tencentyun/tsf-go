@@ -3,6 +3,7 @@ module github.com/tencentyun/tsf-go
 go 1.14
 
 require (
+	git.code.oa.com/polaris/polaris-go v0.7.7
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/fullstorydev/grpcurl v1.8.0
@@ -16,8 +17,6 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/longXboy/go-grpc-http1 v0.0.0-20201202084506-0a6dbcb9e0f7
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/openzipkin/zipkin-go v0.2.5
 	github.com/stretchr/testify v1.6.1
@@ -32,7 +31,6 @@ require (
 	google.golang.org/grpc v1.34.1
 	google.golang.org/protobuf v1.25.1-0.20200805231151-a709e31e5d12
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	honnef.co/go/tools v0.1.0 // indirect
