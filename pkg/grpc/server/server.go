@@ -28,7 +28,6 @@ import (
 	"github.com/tencentyun/tsf-go/version"
 
 	"github.com/openzipkin/zipkin-go"
-	zipkingrpc "github.com/openzipkin/zipkin-go/middleware/grpc"
 	"go.uber.org/zap"
 	grpc "google.golang.org/grpc"
 	_ "google.golang.org/grpc/encoding/gzip" // NOTE: use grpc gzip by header grpc-accept-encoding
@@ -94,17 +93,19 @@ func NewServer(conf *Config, o ...grpc.ServerOption) (s *Server) {
 			// 防止max stream id 溢出的问题
 			MaxConnectionAge: time.Hour * 4,
 		}),
-		grpc.UnaryInterceptor(s.chainUnaryInterceptors()),
-		grpc.StreamInterceptor(s.chainStreamServer()),
-		grpc.StatsHandler(zipkingrpc.NewServerHandler(tracer)),
+		//	grpc.UnaryInterceptor(s.chainUnaryInterceptors()),
+	//	grpc.StreamInterceptor(s.chainStreamServer()),
+	//	grpc.StatsHandler(zipkingrpc.NewServerHandler(tracer)),
 	)
 
 	// can be overwritten by user defined grpc options except UnaryInterceptor(which will cause panic)
 	opts = append(opts, o...)
 	s.Server = grpc.NewServer(opts...)
 	builder := &authenticator.Builder{}
-	s.authen = builder.Build(cfgConsul.DefaultConsul(), naming.NewService(env.NamespaceID(), conf.ServerName))
-	s.Use(s.recovery, s.handle)
+	if !env.DisableRegister() {
+		s.authen = builder.Build(cfgConsul.DefaultConsul(), naming.NewService(env.NamespaceID(), conf.ServerName))
+	}
+	s.Use(s.handle)
 	s.UseStream(s.recoveryStream, s.handleStream)
 
 	// register default health check service
@@ -196,20 +197,24 @@ func (s *Server) Start() error {
 			"TSF_SDK_VERSION":    version.GetHumanVersion(),
 		},
 	}
-	err = consul.DefaultConsul().Register(&ins)
-	if err != nil {
-		time.Sleep(time.Millisecond * 500)
+	if !env.DisableRegister() {
 		err = consul.DefaultConsul().Register(&ins)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			time.Sleep(time.Millisecond * 500)
+			err = consul.DefaultConsul().Register(&ins)
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGHUP)
 	sig := <-sigs
 	log.Info(context.Background(), "[server] got signal,exit now!", zap.String("sig", sig.String()), zap.String("name", s.conf.ServerName))
-	consul.DefaultConsul().Deregister(&ins)
+	if !env.DisableRegister() {
+		consul.DefaultConsul().Deregister(&ins)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	if s.stopHook != nil {
 		err := s.stopHook(ctx)
