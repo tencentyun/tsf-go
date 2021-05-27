@@ -1,0 +1,5 @@
+package gin
+
+func New() {
+
+}

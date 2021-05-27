@@ -25,7 +25,7 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/sys/metrics"
 	"github.com/tencentyun/tsf-go/pkg/sys/trace"
 	"github.com/tencentyun/tsf-go/pkg/util"
-	"github.com/tencentyun/tsf-go/version"
+	"github.com/tencentyun/tsf-go/pkg/version"
 
 	"github.com/openzipkin/zipkin-go"
 	zipkingrpc "github.com/openzipkin/zipkin-go/middleware/grpc"
