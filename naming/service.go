@@ -88,8 +88,9 @@ func FromKratosInstance(ki *registry.ServiceInstance) (inss []*Instance) {
 			Metadata: ki.Metadata,
 			Status:   int64(status),
 		}
-		if ins.Metadata == nil {
-			ins.Metadata = make(map[string]string)
+		ins.Metadata = make(map[string]string)
+		for k, v := range ki.Metadata {
+			ins.Metadata[k] = v
 		}
 		ins.Metadata["protocol"] = scheme
 		json.Unmarshal([]byte(ki.Metadata["tsf_tags"]), &ins.Tags)

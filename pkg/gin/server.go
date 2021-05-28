@@ -1,5 +1,0 @@
-package gin
-
-func New() {
-
-}

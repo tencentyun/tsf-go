@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 
@@ -12,8 +13,8 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
-	"github.com/tencentyun/tsf-go/naming/consul"
-	"github.com/tencentyun/tsf-go/pkg/sys/env"
+
+	tsf "github.com/tencentyun/tsf-go"
 )
 
 // server is used to implement helloworld.GreeterServer.
@@ -27,14 +28,15 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 }
 
 func main() {
+	flag.Parse()
 	logger := log.NewStdLogger(os.Stdout)
 	log := log.NewHelper(logger)
 
 	grpcSrv := grpc.NewServer(
 		grpc.Address(":9000"),
 		grpc.Middleware(
-			recovery.Recovery(),
 			logging.Server(logger),
+			tsf.GRPCServerMiddleware("provider-go", 9000),
 		),
 	)
 	s := &server{}
@@ -44,17 +46,18 @@ func main() {
 	httpSrv.HandlePrefix("/", pb.NewGreeterHandler(s,
 		http.Middleware(
 			recovery.Recovery(),
+			logging.Server(logger),
 		)),
 	)
-
 	app := kratos.New(
-		kratos.Name("helloworld"),
+		kratos.Name("provider-go"),
 		kratos.Server(
 			grpcSrv,
 			httpSrv,
 		),
-		kratos.Registrar(consul.DefaultConsul()),
-		kratos.ID(env.InstanceId()),
+		tsf.Metadata(tsf.APIMeta(false)),
+		tsf.ID(),
+		tsf.Registrar(),
 	)
 
 	if err := app.Run(); err != nil {

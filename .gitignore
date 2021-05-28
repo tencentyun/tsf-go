@@ -1,10 +1,12 @@
 .vscode
 .DS_Store
 *.test
-examples/grpc-simple/consumer/consumer
-examples/grpc-simple/provider/provider
+example/grpc-simple/consumer/consumer
+example/grpc-simple/provider/provider
 root.log
 trace_log.log
 trace.log
 monitor.log
 invocation_log.log
+examples/helloworld/consumer/consumer
+examples/helloworld/provider/provider

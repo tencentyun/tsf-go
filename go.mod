@@ -6,10 +6,10 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/fullstorydev/grpcurl v1.8.1
 	github.com/gin-gonic/gin v1.7.2
-	github.com/go-kratos/kratos/v2 v2.0.0-rc1
+	github.com/go-kratos/kratos/v2 v2.0.0-20210528130517-7f835db398c9
+	github.com/go-kratos/swagger-api v0.1.0
 	github.com/go-playground/validator/v10 v10.6.1 // indirect
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
 	github.com/google/gops v0.3.18
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2 // indirect
@@ -32,7 +32,6 @@ require (
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5
-	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
 	google.golang.org/genproto v0.0.0-20210524171403-669157292da3
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
@@ -41,3 +40,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	nhooyr.io/websocket v1.8.7 // indirect
 )
+
+replace github.com/grpc-ecosystem/grpc-gateway/v2 v2.4.0 => github.com/longXboy/grpc-gateway/v2 v2.0.0-20210512024025-a0dff65b1b3d
