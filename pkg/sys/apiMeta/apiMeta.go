@@ -72,7 +72,6 @@ func Decode(s string) (api *API, err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println(string(res))
 	api = new(API)
 	err = json.Unmarshal(res, api)
 	return

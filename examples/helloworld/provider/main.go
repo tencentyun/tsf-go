@@ -36,7 +36,7 @@ func main() {
 		grpc.Address(":9000"),
 		grpc.Middleware(
 			logging.Server(logger),
-			tsf.GRPCServerMiddleware("provider-go", 9000),
+			tsf.ServerMiddleware("provider-go", 9000),
 		),
 	)
 	s := &server{}
@@ -47,6 +47,7 @@ func main() {
 		http.Middleware(
 			recovery.Recovery(),
 			logging.Server(logger),
+			tsf.ServerMiddleware("provider-go", 8000),
 		)),
 	)
 	app := kratos.New(

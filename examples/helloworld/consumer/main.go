@@ -19,9 +19,9 @@ func main() {
 
 	go func() {
 		for {
-			time.Sleep(time.Millisecond * 500)
-			callGRPC()
-			//callHTTP(c)
+			time.Sleep(time.Millisecond * 1000)
+			//callGRPC()
+			callHTTP()
 			time.Sleep(time.Second)
 		}
 	}()

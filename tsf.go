@@ -5,14 +5,16 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
-	"fmt"
 	"time"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/api/metadata"
 	tgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
+	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/go-kratos/swagger-api/openapiv2"
+	"github.com/tencentyun/tsf-go/balancer/random"
 	"github.com/tencentyun/tsf-go/grpc/balancer/multi"
+	httpMulti "github.com/tencentyun/tsf-go/http/balancer/multi"
 	"github.com/tencentyun/tsf-go/naming/consul"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/version"
@@ -85,7 +87,6 @@ func Metadata(optFuncs ...ServerOption) (opt kratos.Option) {
 				for _, service := range reply.Services {
 					if service != "grpc.health.v1.Health" && service != "grpc.reflection.v1alpha.ServerReflection" && service != "kratos.api.Metadata" {
 						apiMeta, _ = apiSrv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: service})
-						fmt.Print("service:", service, apiMeta)
 						break
 					}
 				}
@@ -120,4 +121,10 @@ func ClientGrpcOptions() tgrpc.ClientOption {
 	router := composite.DefaultComposite()
 	multi.Register(router)
 	return tgrpc.WithOptions(grpc.WithBalancerName("tsf-random"))
+}
+
+func ClientHTTPOptions() http.ClientOption {
+	router := composite.DefaultComposite()
+	b := &random.Picker{}
+	return http.WithBalancer(httpMulti.New(router, b))
 }

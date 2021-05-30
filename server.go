@@ -10,6 +10,8 @@ import (
 
 	"github.com/go-kratos/kratos/v2/middleware"
 	kgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
+	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/gorilla/mux"
 	"github.com/openzipkin/zipkin-go"
 	"github.com/openzipkin/zipkin-go/model"
 	"github.com/openzipkin/zipkin-go/propagation/b3"
@@ -40,18 +42,28 @@ func startContext(ctx context.Context, serviceName string, api string, tracer *z
 	// add system metadata into ctx
 	var sysPairs []meta.SysPair
 	var userPairs []meta.UserPair
+	var md map[string][]string
+	var sc model.SpanContext
 
-	gmd, ok := metadata.FromIncomingContext(ctx)
-	// In practice, ok never seems to be false but add a defensive check.
-	if !ok {
-		gmd = metadata.New(nil)
+	if info, ok := http.FromServerContext(ctx); ok {
+		md = info.Request.Header
+		sc = tracer.Extract(b3.ExtractHTTP(info.Request))
+	} else if gmd, ok := metadata.FromIncomingContext(ctx); ok {
+		for k, v := range gmd {
+			md[k] = v
+		}
+		sc = tracer.Extract(b3.ExtractGRPC(&gmd))
 	}
+	// In practice, ok never seems to be false but add a defensive check.
+	if md == nil {
+		md = make(map[string][]string)
+	}
+
 	name := spanName(api)
-	sc := tracer.Extract(b3.ExtractGRPC(&gmd))
 	span := tracer.StartSpan(name, zipkin.Kind(model.Server), zipkin.Parent(sc), zipkin.RemoteEndpoint(remoteEndpointFromContext(ctx)))
 	ctx = zipkin.NewContext(ctx, span)
 
-	for key, vals := range gmd {
+	for key, vals := range md {
 		if vals[0] == "" {
 			continue
 		}
@@ -132,8 +144,8 @@ func getStat(serviceName string, method string) *monitor.Stat {
 	return monitor.NewStat(monitor.CategoryMS, monitor.KindServer, &monitor.Endpoint{ServiceName: serviceName, InterfaceName: method, Path: method, Method: "POST"}, nil)
 }
 
-// GRPCServerMiddleware is a grpc server middleware.
-func GRPCServerMiddleware(serviceName string, port int) middleware.Middleware {
+// ServerMiddleware is a grpc server middleware.
+func ServerMiddleware(serviceName string, port int) middleware.Middleware {
 	builder := &authenticator.Builder{}
 	authen := builder.Build(consul.DefaultConsul(), naming.NewService(env.NamespaceID(), serviceName))
 	// create our local service endpoint
@@ -149,12 +161,24 @@ func GRPCServerMiddleware(serviceName string, port int) middleware.Middleware {
 
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req interface{}) (resp interface{}, err error) {
-			info, _ := kgrpc.FromServerContext(ctx)
-			api := info.FullMethod
+			var api string
+			var method string
+			if info, ok := kgrpc.FromServerContext(ctx); ok {
+				api = info.FullMethod
+				method = "POST"
+			} else if info, ok := http.FromServerContext(ctx); ok {
+				method = info.Request.Method
+				if route := mux.CurrentRoute(info.Request); route != nil {
+					// /path/123 -> /path/{id}
+					api, _ = route.GetPathTemplate()
+				} else {
+					api = info.Request.URL.RawPath
+				}
+			}
 			ctx = startContext(ctx, serviceName, api, tracer)
 			stat := getStat(serviceName, api)
 			span := zipkin.SpanFromContext(ctx)
-			span.Tag("http.method", "POST")
+			span.Tag("http.method", method)
 			span.Tag("localInterface", api)
 			span.Tag("http.path", api)
 			span.SetRemoteEndpoint(remoteEndpointFromContext(ctx))
@@ -179,7 +203,7 @@ func GRPCServerMiddleware(serviceName string, port int) middleware.Middleware {
 			}()
 
 			// 鉴权
-			err = authen.Verify(ctx, info.FullMethod)
+			err = authen.Verify(ctx, api)
 			if err != nil {
 				return
 			}

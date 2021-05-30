@@ -42,7 +42,7 @@ func newService(c *consul.Consul) {
 		grpc.WithEndpoint("discovery:///provider-go"),
 		grpc.WithDiscovery(c),
 		grpc.WithMiddleware(
-			tsf.GRPCClientMiddleware("provider-go"),
+			tsf.ClientMiddleware("provider-go"),
 		),
 		tsf.ClientGrpcOptions(),
 	)
@@ -54,6 +54,7 @@ func newService(c *consul.Consul) {
 		context.Background(),
 		transhttp.WithMiddleware(
 			recovery.Recovery(),
+			tsf.ClientMiddleware("provider-go"),
 		),
 		transhttp.WithScheme("http"),
 		transhttp.WithEndpoint("discovery:///provider-go"),
@@ -69,19 +70,20 @@ func newService(c *consul.Consul) {
 	}
 
 	grpcSrv := grpc.NewServer(
-		grpc.Address(":9090"),
+		grpc.Address("0.0.0.0:9090"),
 		grpc.Middleware(
 			logging.Server(logger),
-			tsf.GRPCServerMiddleware("consumer-go", 9090),
+			tsf.ServerMiddleware("consumer-go", 9090),
 		),
 	)
 	pb.RegisterGreeterServer(grpcSrv, s)
 
-	httpSrv := http.NewServer(http.Address(":8080"))
+	httpSrv := http.NewServer(http.Address("0.0.0.0:8080"))
 	httpSrv.HandlePrefix("/", pb.NewGreeterHandler(s,
 		http.Middleware(
 			recovery.Recovery(),
 			logging.Server(logger),
+			tsf.ServerMiddleware("consumer-go", 8080),
 		)),
 	)
 	app := kratos.New(
