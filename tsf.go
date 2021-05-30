@@ -10,10 +10,13 @@ import (
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/api/metadata"
+	tgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/swagger-api/openapiv2"
+	"github.com/tencentyun/tsf-go/grpc/balancer/multi"
 	"github.com/tencentyun/tsf-go/naming/consul"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/version"
+	"github.com/tencentyun/tsf-go/route/composite"
 	"google.golang.org/grpc"
 )
 
@@ -110,4 +113,11 @@ func ID() kratos.Option {
 }
 func Registrar() kratos.Option {
 	return kratos.Registrar(consul.DefaultConsul())
+}
+
+func ClientGrpcOptions() tgrpc.ClientOption {
+	// 将wrr负载均衡模块注入至grpc
+	router := composite.DefaultComposite()
+	multi.Register(router)
+	return tgrpc.WithOptions(grpc.WithBalancerName("tsf-random"))
 }

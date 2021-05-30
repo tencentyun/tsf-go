@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-kratos/kratos/v2/registry"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
 )
 
 const (
@@ -27,6 +28,13 @@ const (
 type Service struct {
 	Namespace string
 	Name      string
+}
+
+func NewService(namespace string, name string) *Service {
+	if namespace == "" || namespace == NsLocal {
+		namespace = env.NamespaceID()
+	}
+	return &Service{Namespace: namespace, Name: name}
 }
 
 // Instance 服务实例信息

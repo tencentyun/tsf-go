@@ -394,7 +394,7 @@ func (s *svcInfo) store(nodes []CheckServiceNode) {
 	var inss []*registry.ServiceInstance
 	for _, node := range nodes {
 		var ins = naming.Instance{
-			Service:  &naming.Service{Namespace: node.Service.Meta[naming.NamespaceID], Name: node.Service.Service},
+			Service:  naming.NewService(node.Service.Meta[naming.NamespaceID], node.Service.Service),
 			ID:       node.Service.ID,
 			Host:     node.Service.Address,
 			Port:     node.Service.Port,

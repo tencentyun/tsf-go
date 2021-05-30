@@ -37,7 +37,7 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 	// 注入远端服务名
 	pairs := []meta.SysPair{
 		{Key: meta.DestKey(meta.ServiceName), Value: remoteServiceName},
-		//{Key: meta.DestKey(meta.ServiceNamespace), Value: c.remoteService.Namespace},
+		{Key: meta.DestKey(meta.ServiceNamespace), Value: env.NamespaceID()},
 	}
 	// 注入自己的服务名
 	serviceName := env.ServiceName()

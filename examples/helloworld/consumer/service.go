@@ -44,6 +44,7 @@ func newService(c *consul.Consul) {
 		grpc.WithMiddleware(
 			tsf.GRPCClientMiddleware("provider-go"),
 		),
+		tsf.ClientGrpcOptions(),
 	)
 	if err != nil {
 		log.Errorf("dial grpc err:%v", err)
