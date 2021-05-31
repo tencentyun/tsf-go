@@ -8,5 +8,7 @@ trace_log.log
 trace.log
 monitor.log
 invocation_log.log
-examples/helloworld/consumer/consumer
-examples/helloworld/provider/provider
+examples/helloworld/grpc/consumer/consumer
+examples/helloworld/grpc/provider/provider
+examples/helloworld/http/consumer/consumer
+examples/helloworld/http/provider/provider

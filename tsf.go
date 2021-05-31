@@ -37,24 +37,30 @@ func GRPCServer(srv *grpc.Server) ServerOption {
 	}
 }
 
-func APIMeta(enable bool) ServerOption {
-	return func(s *serverOptions) {
-		s.apiMeta = enable
-	}
-}
-
 type serverOptions struct {
 	protoService string
 	srv          *grpc.Server
 	apiMeta      bool
 }
 
-func Metadata(optFuncs ...ServerOption) (opt kratos.Option) {
-	var opts serverOptions = serverOptions{
-		apiMeta: true,
+func APIMeta(enable bool) ServerOption {
+	return func(s *serverOptions) {
+		s.apiMeta = enable
 	}
+}
+
+func Metadata(optFuncs ...ServerOption) (opt kratos.Option) {
+	enableApiMeta := true
+	if env.Token() == "" {
+		enableApiMeta = false
+	}
+
+	var opts serverOptions = serverOptions{}
 	for _, o := range optFuncs {
 		o(&opts)
+	}
+	if opts.apiMeta {
+		enableApiMeta = true
 	}
 
 	md := map[string]string{
@@ -67,8 +73,7 @@ func Metadata(optFuncs ...ServerOption) (opt kratos.Option) {
 		"TSF_NAMESPACE_ID":   env.NamespaceID(),
 		"TSF_SDK_VERSION":    version.GetHumanVersion(),
 	}
-	if opts.apiMeta {
-
+	if enableApiMeta {
 		var apiSrv *openapiv2.Service
 		if opts.srv != nil {
 			apiSrv = openapiv2.New(opts.srv)
@@ -105,6 +110,7 @@ func Metadata(optFuncs ...ServerOption) (opt kratos.Option) {
 			}
 		}
 	}
+
 	opt = kratos.Metadata(md)
 	return
 }
