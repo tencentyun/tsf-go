@@ -143,8 +143,8 @@ github.com/go-kratos/kratos/v2 v2.0.0-20210527131947-b32e7d6e701f h1:/GsRaJ0x7ci
 github.com/go-kratos/kratos/v2 v2.0.0-20210527131947-b32e7d6e701f/go.mod h1:puDEhRv+dqKa4ZdlInEAbO8ibGxqNhAXFjGleIRh9V4=
 github.com/go-kratos/kratos/v2 v2.0.0-20210531162156-ad8f12c9fda0 h1:5+H5C6Dky8FkvjLvUCmho9Dr3C3F9rE2ijkvCP+01nQ=
 github.com/go-kratos/kratos/v2 v2.0.0-20210531162156-ad8f12c9fda0/go.mod h1:puDEhRv+dqKa4ZdlInEAbO8ibGxqNhAXFjGleIRh9V4=
-github.com/go-kratos/swagger-api v0.1.0 h1:0J9jaH15d/FsZ/NHZirx+vnxcF6JDuHVWIahHJcvRhw=
-github.com/go-kratos/swagger-api v0.1.0/go.mod h1:7r17rgX1HIL+BzEU303WqY4mAXQzpG8TME6EWvy2Jpk=
+github.com/go-kratos/swagger-api v0.1.1 h1:RVnx02D0TPrtLjI4ryGs0SdZDCwyygb1smof/3hJdwo=
+github.com/go-kratos/swagger-api v0.1.1/go.mod h1:RPARxyK1ujLqJPu93nOuadQgeHeoqzdaG3yrXsS7wII=
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
 github.com/go-logfmt/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
 github.com/go-ole/go-ole v1.2.4/go.mod h1:XCwSNxSkXRo4vlyPy93sltvi/qJq0jqQhjqQNIwKuxM=
@@ -325,8 +325,8 @@ github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ic
 github.com/lib/pq v1.1.1/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/longXboy/go-grpc-http1 v0.0.0-20201202084506-0a6dbcb9e0f7 h1:lWRXe1kVEqvFtxLW5R/lGhVLQq+RDEiYgxRNC6Us+R8=
 github.com/longXboy/go-grpc-http1 v0.0.0-20201202084506-0a6dbcb9e0f7/go.mod h1:8p5FkV+Z3Ced/x2Fv3KZg4/b1ib5r8eHTNLf60eh4bM=
-github.com/longXboy/grpc-gateway/v2 v2.0.0-20210512024025-a0dff65b1b3d h1:u6+jXuK8pK1EaEcIVqX3ZObgT51Oq844bfMCvohRn6M=
-github.com/longXboy/grpc-gateway/v2 v2.0.0-20210512024025-a0dff65b1b3d/go.mod h1:iXQhaudIukY14cdGDpns6UKB3DlSdraGWneIdc+mQFM=
+github.com/longXboy/grpc-gateway/v2 v2.0.0-20210531142419-d092a7b47e6d h1:We368zlGn168slPGB3v+OZqSBqBef38ejoGLbRolfoM=
+github.com/longXboy/grpc-gateway/v2 v2.0.0-20210531142419-d092a7b47e6d/go.mod h1:v/5J9p65LZiGO930dxB45KnwRJ2pQ/CD+6Yj+aB16iM=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/mattn/go-colorable v0.1.1/go.mod h1:FuOcm+DKB9mbwrcAfNl7/TZVBZ6rcnceauSikq3lYCQ=
 github.com/mattn/go-colorable v0.1.2/go.mod h1:U0ppj6V5qS13XJ6of8GYAs25YV2eR4EVcfRqFIhoBtE=
@@ -642,6 +642,8 @@ golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20210423082822-04245dca01da/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea h1:+WiDlPBBaO+h9vPNZi8uJ3k4BkKQB7Iow3aqwHVA5hI=
 golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20210601080250-7ecdf8ef093b h1:qh4f65QIVFjq9eBURLEYWqaEXmOyqdUyiBSgaXWccWk=
+golang.org/x/sys v0.0.0-20210601080250-7ecdf8ef093b/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 h1:v+OssWQX+hTHEmOBgwxdZxK4zHq3yOs8F9J7mk0PY8E=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
