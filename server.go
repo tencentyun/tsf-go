@@ -167,12 +167,13 @@ func ServerMiddleware(serviceName string, port int) middleware.Middleware {
 				api = info.FullMethod
 				method = "POST"
 			} else if info, ok := http.FromServerContext(ctx); ok {
-				method = info.Request.Method
-				if route := mux.CurrentRoute(info.Request); route != nil {
+				req := info.Request.WithContext(ctx)
+				method = req.Method
+				if route := mux.CurrentRoute(req); route != nil {
 					// /path/123 -> /path/{id}
 					api, _ = route.GetPathTemplate()
 				} else {
-					api = info.Request.URL.RawPath
+					api = req.URL.Path
 				}
 			}
 			ctx = startContext(ctx, serviceName, api, tracer)

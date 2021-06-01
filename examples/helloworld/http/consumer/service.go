@@ -41,6 +41,7 @@ func newService(c *consul.Consul) {
 		transhttp.WithScheme("http"),
 		transhttp.WithEndpoint("discovery:///provider-go"),
 		transhttp.WithDiscovery(c),
+		tsf.ClientHTTPOptions(),
 	)
 	if err != nil {
 		log.Errorf("dial http err:%v", err)
