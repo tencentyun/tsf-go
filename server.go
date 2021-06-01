@@ -3,19 +3,23 @@ package tsf
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 
+	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/middleware"
+	"github.com/go-kratos/kratos/v2/transport"
 	kgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
+
 	"github.com/gorilla/mux"
 	"github.com/openzipkin/zipkin-go"
 	"github.com/openzipkin/zipkin-go/model"
 	"github.com/openzipkin/zipkin-go/propagation/b3"
 	"github.com/tencentyun/tsf-go/gin"
+	"github.com/tencentyun/tsf-go/pkg/auth"
 	"github.com/tencentyun/tsf-go/pkg/auth/authenticator"
 	"github.com/tencentyun/tsf-go/pkg/config/consul"
 	"github.com/tencentyun/tsf-go/pkg/grpc/status"
@@ -60,10 +64,6 @@ func startContext(ctx context.Context, serviceName string, api string, tracer *z
 	if md == nil {
 		md = make(map[string][]string)
 	}
-
-	name := spanName(api)
-	span := tracer.StartSpan(name, zipkin.Kind(model.Server), zipkin.Parent(sc), zipkin.RemoteEndpoint(remoteEndpointFromContext(ctx)))
-	ctx = zipkin.NewContext(ctx, span)
 
 	for key, vals := range md {
 		if vals[0] == "" {
@@ -126,6 +126,10 @@ func startContext(ctx context.Context, serviceName string, api string, tracer *z
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ConnnectionIP, Value: env.LocalIP()})
 	ctx = meta.WithSys(ctx, sysPairs...)
 	ctx = meta.WithUser(ctx, userPairs...)
+
+	name := spanName(api)
+	span := tracer.StartSpan(name, zipkin.Kind(model.Server), zipkin.Parent(sc), zipkin.RemoteEndpoint(remoteEndpointFromContext(ctx)))
+	ctx = zipkin.NewContext(ctx, span)
 	return ctx
 }
 
@@ -137,7 +141,7 @@ func remoteEndpointFromContext(ctx context.Context) *model.Endpoint {
 	} else if info, ok := http.FromServerContext(ctx); ok {
 		remoteAddr = info.Request.RemoteAddr
 	}
-	var name string = "default-client-go"
+	var name string = ""
 	name, _ = meta.Sys(ctx, meta.SourceKey(meta.ServiceName)).(string)
 	ep, _ := zipkin.NewEndpoint(name, remoteAddr)
 	return ep
@@ -148,22 +152,36 @@ func getStat(serviceName string, method string) *monitor.Stat {
 }
 
 // ServerMiddleware is a grpc server middleware.
-func ServerMiddleware(serviceName string, port int) middleware.Middleware {
-	builder := &authenticator.Builder{}
-	authen := builder.Build(consul.DefaultConsul(), naming.NewService(env.NamespaceID(), serviceName))
-	// create our local service endpoint
-	endpoint, err := zipkin.NewEndpoint(serviceName, fmt.Sprintf("%s:%d", env.LocalIP(), port))
-	if err != nil {
-		panic(err)
-	}
-	// initialize our tracer
-	tracer, err := zipkin.NewTracer(trace.GetReporter(), zipkin.WithLocalEndpoint(endpoint))
-	if err != nil {
-		panic(err)
-	}
-
+func ServerMiddleware() middleware.Middleware {
+	var (
+		tracer      *zipkin.Tracer
+		authen      auth.Auth
+		once        sync.Once
+		serviceName string
+	)
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req interface{}) (resp interface{}, err error) {
+			once.Do(func() {
+				tr, _ := transport.FromContext(ctx)
+				u, err := url.Parse(tr.Endpoint)
+				if err != nil {
+					panic(err)
+				}
+				k, _ := kratos.FromContext(ctx)
+				serviceName = k.Name
+				builder := &authenticator.Builder{}
+				authen = builder.Build(consul.DefaultConsul(), naming.NewService(env.NamespaceID(), serviceName))
+				// create our local service endpoint
+				endpoint, err := zipkin.NewEndpoint(serviceName, u.Host)
+				if err != nil {
+					panic(err)
+				}
+				// initialize our tracer
+				tracer, err = zipkin.NewTracer(trace.GetReporter(), zipkin.WithLocalEndpoint(endpoint))
+				if err != nil {
+					panic(err)
+				}
+			})
 			var api string
 			var method string
 			if info, ok := kgrpc.FromServerContext(ctx); ok {
@@ -187,7 +205,6 @@ func ServerMiddleware(serviceName string, port int) middleware.Middleware {
 			span.Tag("http.method", method)
 			span.Tag("localInterface", api)
 			span.Tag("http.path", api)
-			span.SetRemoteEndpoint(remoteEndpointFromContext(ctx))
 			defer func() {
 				var code = 200
 				if err != nil {

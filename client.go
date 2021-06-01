@@ -3,9 +3,13 @@ package tsf
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
+	"sync"
 
+	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/middleware"
+	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/openzipkin/zipkin-go"
@@ -41,12 +45,14 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 		{Key: meta.DestKey(meta.ServiceNamespace), Value: env.NamespaceID()},
 	}
 	// 注入自己的服务名
-	serviceName := env.ServiceName()
+	k, _ := kratos.FromContext(ctx)
+	serviceName := k.Name
 	if res := meta.Sys(ctx, meta.ServiceName); res == nil {
 		pairs = append(pairs, meta.SysPair{Key: meta.ServiceName, Value: serviceName})
 	} else {
 		serviceName = res.(string)
 	}
+
 	pairs = append(pairs, meta.SysPair{Key: meta.DestKey(meta.Interface), Value: api})
 	if laneID := l.GetLaneID(ctx); laneID != "" {
 		pairs = append(pairs, meta.SysPair{Key: meta.LaneID, Value: laneID})
@@ -86,12 +92,32 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 	return ctx
 }
 
-func ClientMiddleware(remoteServiceName string) middleware.Middleware {
+func parseTarget(endpoint string) (string, error) {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		if u, err = url.Parse("http://" + endpoint); err != nil {
+			return "", err
+		}
+	}
+	var service string
+	if len(u.Path) > 1 {
+		service = u.Path[1:]
+	}
+	return service, nil
+}
+
+func ClientMiddleware() middleware.Middleware {
 	router := composite.DefaultComposite()
 	multi.Register(router)
 	lane := router.Lane()
+	var remoteServiceName string
+	var once sync.Once
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
+			once.Do(func() {
+				tr, _ := transport.FromContext(ctx)
+				remoteServiceName, _ = parseTarget(tr.Endpoint)
+			})
 			var api string
 			var method string
 			if info, ok := grpc.FromClientContext(ctx); ok {

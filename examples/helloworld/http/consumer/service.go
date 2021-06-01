@@ -36,7 +36,7 @@ func newService(c *consul.Consul) {
 		context.Background(),
 		transhttp.WithMiddleware(
 			recovery.Recovery(),
-			tsf.ClientMiddleware("provider-http"),
+			tsf.ClientMiddleware(),
 		),
 		transhttp.WithEndpoint("discovery:///provider-http"),
 		transhttp.WithDiscovery(c),
@@ -55,7 +55,7 @@ func newService(c *consul.Consul) {
 		http.Middleware(
 			recovery.Recovery(),
 			logging.Server(logger),
-			tsf.ServerMiddleware("consumer-http", 8080),
+			tsf.ServerMiddleware(),
 		)),
 	)
 	app := kratos.New(

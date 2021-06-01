@@ -63,7 +63,7 @@ func ContentType(subtype string) string {
 	return strings.Join([]string{baseContentType, subtype}, "/")
 }
 
-func GinMiddleware(m ...middleware.Middleware) gin.HandlerFunc {
+func Middlewares(m ...middleware.Middleware) gin.HandlerFunc {
 	chain := middleware.Chain(m...)
 	return func(c *gin.Context) {
 		next := func(ctx context.Context, req interface{}) (interface{}, error) {

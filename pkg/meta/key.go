@@ -9,15 +9,15 @@ const (
 )
 
 const (
-	ApplicationID      = "application.id"
-	GroupID            = "group.id"
-	ConnnectionIP      = "connection.ip"
-	ApplicationVersion = "application.version"
-	ServiceName        = "service.name"
-	Interface          = "interface"
-	RequestHTTPMethod  = "request.http.method"
-	ServiceNamespace   = "service.namespace"
-	Namespace          = "namespace"
+	ApplicationID      = "Application.id"
+	GroupID            = "Group.id"
+	ConnnectionIP      = "Connection.ip"
+	ApplicationVersion = "Application.version"
+	ServiceName        = "Service.name"
+	Interface          = "Interface"
+	RequestHTTPMethod  = "Request.http.method"
+	ServiceNamespace   = "Service.namespace"
+	Namespace          = "Namespace"
 
 	Tracer = "tsf.tracer"
 	LaneID = "lane.id"

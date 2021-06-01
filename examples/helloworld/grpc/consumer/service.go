@@ -35,7 +35,7 @@ func newService(c *consul.Consul) {
 		grpc.WithEndpoint("discovery:///provider-go"),
 		grpc.WithDiscovery(c),
 		grpc.WithMiddleware(
-			tsf.ClientMiddleware("provider-go"),
+			tsf.ClientMiddleware(),
 		),
 		tsf.ClientGrpcOptions(),
 	)
@@ -52,7 +52,7 @@ func newService(c *consul.Consul) {
 		grpc.Address("0.0.0.0:9090"),
 		grpc.Middleware(
 			logging.Server(logger),
-			tsf.ServerMiddleware("consumer-go", 9090),
+			tsf.ServerMiddleware(),
 		),
 	)
 	pb.RegisterGreeterServer(grpcSrv, s)

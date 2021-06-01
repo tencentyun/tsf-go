@@ -37,7 +37,7 @@ func main() {
 		http.Middleware(
 			recovery.Recovery(),
 			logging.Server(logger),
-			tsf.ServerMiddleware("provider-http", 8000),
+			tsf.ServerMiddleware(),
 		)),
 	)
 	app := kratos.New(

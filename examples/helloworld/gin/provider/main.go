@@ -19,7 +19,7 @@ type Reply struct {
 
 func main() {
 	router := gin.Default()
-	router.Use(tgin.GinMiddleware(tsf.ServerMiddleware("provider-http", 8000)))
+	router.Use(tgin.Middlewares(tsf.ServerMiddleware()))
 
 	router.GET("/helloworld/:name", func(ctx *gin.Context) {
 		name := ctx.Param("name")
