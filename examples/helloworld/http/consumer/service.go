@@ -36,10 +36,10 @@ func newService(c *consul.Consul) {
 		context.Background(),
 		transhttp.WithMiddleware(
 			recovery.Recovery(),
-			tsf.ClientMiddleware("provider-go"),
+			tsf.ClientMiddleware("provider-http"),
 		),
 		transhttp.WithScheme("http"),
-		transhttp.WithEndpoint("discovery:///provider-go"),
+		transhttp.WithEndpoint("discovery:///provider-http"),
 		transhttp.WithDiscovery(c),
 		tsf.ClientHTTPOptions(),
 	)
@@ -56,11 +56,11 @@ func newService(c *consul.Consul) {
 		http.Middleware(
 			recovery.Recovery(),
 			logging.Server(logger),
-			tsf.ServerMiddleware("consumer-go", 8080),
+			tsf.ServerMiddleware("consumer-http", 8080),
 		)),
 	)
 	app := kratos.New(
-		kratos.Name("consumer-go"),
+		kratos.Name("consumer-http"),
 		kratos.Server(
 			httpSrv,
 		),

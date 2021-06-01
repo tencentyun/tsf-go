@@ -15,6 +15,7 @@ import (
 	"github.com/openzipkin/zipkin-go"
 	"github.com/openzipkin/zipkin-go/model"
 	"github.com/openzipkin/zipkin-go/propagation/b3"
+	"github.com/tencentyun/tsf-go/gin"
 	"github.com/tencentyun/tsf-go/pkg/auth/authenticator"
 	"github.com/tencentyun/tsf-go/pkg/config/consul"
 	"github.com/tencentyun/tsf-go/pkg/grpc/status"
@@ -27,6 +28,7 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 	"github.com/tencentyun/tsf-go/pkg/sys/trace"
 	"github.com/tencentyun/tsf-go/pkg/util"
+
 	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
@@ -130,11 +132,12 @@ func startContext(ctx context.Context, serviceName string, api string, tracer *z
 func remoteEndpointFromContext(ctx context.Context) *model.Endpoint {
 	remoteAddr := ""
 
-	p, ok := peer.FromContext(ctx)
-	if ok {
+	if p, ok := peer.FromContext(ctx); ok {
 		remoteAddr = p.Addr.String()
+	} else if info, ok := http.FromServerContext(ctx); ok {
+		remoteAddr = info.Request.RemoteAddr
 	}
-	var name string
+	var name string = "default-client-go"
 	name, _ = meta.Sys(ctx, meta.SourceKey(meta.ServiceName)).(string)
 	ep, _ := zipkin.NewEndpoint(name, remoteAddr)
 	return ep
@@ -169,7 +172,9 @@ func ServerMiddleware(serviceName string, port int) middleware.Middleware {
 			} else if info, ok := http.FromServerContext(ctx); ok {
 				req := info.Request.WithContext(ctx)
 				method = req.Method
-				if route := mux.CurrentRoute(req); route != nil {
+				if c, ok := gin.FromGinContext(ctx); ok {
+					api = c.Ctx.FullPath()
+				} else if route := mux.CurrentRoute(req); route != nil {
 					// /path/123 -> /path/{id}
 					api, _ = route.GetPathTemplate()
 				} else {
