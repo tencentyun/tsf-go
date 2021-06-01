@@ -30,7 +30,6 @@ func main() {
 func callHTTP() {
 	conn, err := transhttp.NewClient(
 		context.Background(),
-		transhttp.WithScheme("http"),
 		transhttp.WithEndpoint("127.0.0.1:8080"),
 	)
 	if err != nil {

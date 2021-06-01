@@ -38,7 +38,6 @@ func newService(c *consul.Consul) {
 			recovery.Recovery(),
 			tsf.ClientMiddleware("provider-http"),
 		),
-		transhttp.WithScheme("http"),
 		transhttp.WithEndpoint("discovery:///provider-http"),
 		transhttp.WithDiscovery(c),
 		tsf.ClientHTTPOptions(),
