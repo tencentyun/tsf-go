@@ -124,8 +124,10 @@ func (p *Picker) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
 		ep, _ := zipkin.NewEndpoint(node.Service.Name, node.Addr())
 		span.SetRemoteEndpoint(ep)
 	}
+	sc := p.subConns[node.Addr()]
+
 	return balancer.PickResult{
-		SubConn: p.subConns[node.Addr()],
-		Done:    nil,
+		SubConn: sc,
+		Done:    func(di balancer.DoneInfo) {},
 	}, nil
 }

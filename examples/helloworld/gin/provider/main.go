@@ -33,15 +33,10 @@ func main() {
 	httpSrv := http.NewServer(http.Address(":8000"))
 	httpSrv.HandlePrefix("/", router)
 
-	app := kratos.New(
-		kratos.Name("provider-http"),
-		kratos.Server(
-			httpSrv,
-		),
-		tsf.Metadata(),
-		tsf.ID(),
-		tsf.Registrar(),
-	)
+	opts := []kratos.Option{kratos.Name("provider-http"), kratos.Server(httpSrv)}
+	opts = append(opts, tsf.DefaultOptions()...)
+	app := kratos.New(opts...)
+
 	if err := app.Run(); err != nil {
 		log.Println(err)
 	}

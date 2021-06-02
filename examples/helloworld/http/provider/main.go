@@ -40,15 +40,10 @@ func main() {
 			tsf.ServerMiddleware(),
 		)),
 	)
-	app := kratos.New(
-		kratos.Name("provider-http"),
-		kratos.Server(
-			httpSrv,
-		),
-		tsf.Metadata(),
-		tsf.ID(),
-		tsf.Registrar(),
-	)
+
+	opts := []kratos.Option{kratos.Name("provider-http"), kratos.Server(httpSrv)}
+	opts = append(opts, tsf.DefaultOptions()...)
+	app := kratos.New(opts...)
 
 	if err := app.Run(); err != nil {
 		log.Errorf("app run failed:%v", err)

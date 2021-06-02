@@ -7,6 +7,7 @@ import (
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
+	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 	"github.com/tencentyun/tsf-go/naming/consul"
@@ -30,15 +31,9 @@ func newService(c *consul.Consul) {
 	logger := log.NewStdLogger(os.Stdout)
 	log := log.NewHelper(logger)
 
-	conn, err := grpc.DialInsecure(
-		context.Background(),
-		grpc.WithEndpoint("discovery:///provider-go"),
-		grpc.WithDiscovery(c),
-		grpc.WithMiddleware(
-			tsf.ClientMiddleware(),
-		),
-		tsf.ClientGrpcOptions(),
-	)
+	clientOpts := []grpc.ClientOption{grpc.WithEndpoint("discovery:///provider-grpc")}
+	clientOpts = append(clientOpts, tsf.ClientGrpcOptions()...)
+	conn, err := grpc.DialInsecure(context.Background(), clientOpts...)
 	if err != nil {
 		log.Errorf("dial grpc err:%v", err)
 		return
@@ -51,21 +46,16 @@ func newService(c *consul.Consul) {
 	grpcSrv := grpc.NewServer(
 		grpc.Address("0.0.0.0:9090"),
 		grpc.Middleware(
+			recovery.Recovery(),
 			logging.Server(logger),
 			tsf.ServerMiddleware(),
 		),
 	)
 	pb.RegisterGreeterServer(grpcSrv, s)
 
-	app := kratos.New(
-		kratos.Name("consumer-go"),
-		kratos.Server(
-			grpcSrv,
-		),
-		tsf.Metadata(tsf.APIMeta(false)),
-		tsf.ID(),
-		tsf.Registrar(),
-	)
+	opts := []kratos.Option{kratos.Name("consumer-grpc"), kratos.Server(grpcSrv)}
+	opts = append(opts, tsf.DefaultOptions()...)
+	app := kratos.New(opts...)
 
 	if err := app.Run(); err != nil {
 		log.Errorf("app run failed:%v", err)

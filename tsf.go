@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/api/metadata"
+	"github.com/go-kratos/kratos/v2/middleware"
 	tgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/go-kratos/swagger-api/openapiv2"
@@ -122,15 +123,37 @@ func Registrar() kratos.Option {
 	return kratos.Registrar(consul.DefaultConsul())
 }
 
-func ClientGrpcOptions() tgrpc.ClientOption {
+func ClientGrpcOptions(m ...middleware.Middleware) []tgrpc.ClientOption {
+	var opts []tgrpc.ClientOption
+
+	m = append(m, ClientMiddleware())
 	// 将wrr负载均衡模块注入至grpc
 	router := composite.DefaultComposite()
 	multi.Register(router)
-	return tgrpc.WithOptions(grpc.WithBalancerName("tsf-random"))
+	opts = []tgrpc.ClientOption{
+		tgrpc.WithOptions(grpc.WithBalancerName("tsf-random")),
+		tgrpc.WithMiddleware(m...),
+		tgrpc.WithDiscovery(consul.DefaultConsul()),
+	}
+	return opts
 }
 
-func ClientHTTPOptions() http.ClientOption {
+func ClientHTTPOptions(m ...middleware.Middleware) []http.ClientOption {
+	var opts []http.ClientOption
+
 	router := composite.DefaultComposite()
 	b := &random.Picker{}
-	return http.WithBalancer(httpMulti.New(router, b))
+	m = append(m, ClientMiddleware())
+	opts = []http.ClientOption{
+		http.WithBalancer(httpMulti.New(router, b)),
+		http.WithMiddleware(m...),
+		http.WithDiscovery(consul.DefaultConsul()),
+	}
+	return opts
+}
+
+func DefaultOptions() []kratos.Option {
+	return []kratos.Option{
+		ID(), Registrar(), Metadata(),
+	}
 }

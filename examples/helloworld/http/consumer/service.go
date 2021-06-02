@@ -9,7 +9,6 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/http"
-	transhttp "github.com/go-kratos/kratos/v2/transport/http"
 	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 	"github.com/tencentyun/tsf-go/naming/consul"
 
@@ -32,16 +31,9 @@ func newService(c *consul.Consul) {
 	logger := log.NewStdLogger(os.Stdout)
 	log := log.NewHelper(logger)
 
-	httpConn, err := transhttp.NewClient(
-		context.Background(),
-		transhttp.WithMiddleware(
-			recovery.Recovery(),
-			tsf.ClientMiddleware(),
-		),
-		transhttp.WithEndpoint("discovery:///provider-http"),
-		transhttp.WithDiscovery(c),
-		tsf.ClientHTTPOptions(),
-	)
+	clientOpts := []http.ClientOption{http.WithEndpoint("discovery:///provider-http")}
+	clientOpts = append(clientOpts, tsf.ClientHTTPOptions()...)
+	httpConn, err := http.NewClient(context.Background(), clientOpts...)
 	if err != nil {
 		log.Errorf("dial http err:%v", err)
 		return
@@ -58,15 +50,10 @@ func newService(c *consul.Consul) {
 			tsf.ServerMiddleware(),
 		)),
 	)
-	app := kratos.New(
-		kratos.Name("consumer-http"),
-		kratos.Server(
-			httpSrv,
-		),
-		tsf.Metadata(tsf.APIMeta(false)),
-		tsf.ID(),
-		tsf.Registrar(),
-	)
+
+	opts := []kratos.Option{kratos.Name("consumer-http"), kratos.Server(httpSrv)}
+	opts = append(opts, tsf.DefaultOptions()...)
+	app := kratos.New(opts...)
 
 	if err := app.Run(); err != nil {
 		log.Errorf("app run failed:%v", err)

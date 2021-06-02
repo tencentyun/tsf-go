@@ -48,8 +48,8 @@ func startContext(ctx context.Context, serviceName string, api string, tracer *z
 	// add system metadata into ctx
 	var sysPairs []meta.SysPair
 	var userPairs []meta.UserPair
-	var md map[string][]string
 	var sc model.SpanContext
+	md := map[string][]string{}
 
 	if info, ok := http.FromServerContext(ctx); ok {
 		md = info.Request.Header
@@ -69,6 +69,7 @@ func startContext(ctx context.Context, serviceName string, api string, tracer *z
 		if vals[0] == "" {
 			continue
 		}
+		key = strings.ToLower(key)
 		if meta.IsIncomming(key) {
 			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(key), Value: vals[0]})
 		} else if meta.IsUserKey(key) {

@@ -9,6 +9,7 @@ import (
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
+	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 
@@ -33,6 +34,7 @@ func main() {
 	grpcSrv := grpc.NewServer(
 		grpc.Address(":9000"),
 		grpc.Middleware(
+			recovery.Recovery(),
 			logging.Server(logger),
 			tsf.ServerMiddleware(),
 		),
@@ -40,15 +42,9 @@ func main() {
 	s := &server{}
 	pb.RegisterGreeterServer(grpcSrv, s)
 
-	app := kratos.New(
-		kratos.Name("provider-go"),
-		kratos.Server(
-			grpcSrv,
-		),
-		tsf.Metadata(tsf.APIMeta(false)),
-		tsf.ID(),
-		tsf.Registrar(),
-	)
+	opts := []kratos.Option{kratos.Name("provider-grpc"), kratos.Server(grpcSrv)}
+	opts = append(opts, tsf.DefaultOptions()...)
+	app := kratos.New(opts...)
 
 	if err := app.Run(); err != nil {
 		log.Errorf("app run failed:%v", err)
