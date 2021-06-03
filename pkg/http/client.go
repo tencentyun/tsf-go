@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/statusError"
+	"github.com/go-kratos/kratos/v2/errors"
 )
 
 type Client struct {
@@ -128,7 +128,7 @@ func (c *Client) Do(method string, url string, reqBody interface{}, respBody int
 	header = resp.Header
 	if resp.StatusCode != http.StatusOK {
 		content, _ = ioutil.ReadAll(resp.Body)
-		err = statusError.New(statusError.Code(resp.StatusCode), string(content))
+		err = errors.Newf(resp.StatusCode, errors.UnknownReason, string(content))
 		return
 	}
 	content, err = ioutil.ReadAll(resp.Body)

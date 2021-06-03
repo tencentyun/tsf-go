@@ -5,9 +5,9 @@ import (
 	"io"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/tencentyun/tsf-go/pkg/grpc/server"
 	"github.com/tencentyun/tsf-go/pkg/log"
-	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/util"
 	pb "github.com/tencentyun/tsf-go/testdata"
 
@@ -41,7 +41,7 @@ type Service struct {
 func (s *Service) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloReply, error) {
 	if req.Name == "Error" {
 		// 返回400 badrequest
-		return &pb.HelloReply{Message: "hi " + req.Name}, statusError.BadRequest(req.Name)
+		return &pb.HelloReply{Message: "hi " + req.Name}, errors.BadRequest(errors.UnknownReason, req.Name)
 	}
 	return &pb.HelloReply{Message: "hi " + req.Name}, nil
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/registry"
 	"github.com/tencentyun/tsf-go/naming"
 	"github.com/tencentyun/tsf-go/pkg/log"
-	"github.com/tencentyun/tsf-go/pkg/statusError"
 
 	"go.uber.org/zap"
 )
@@ -53,7 +53,7 @@ func (c *Consul) registerIns(ins *naming.Instance) (err error) {
 			case <-timer.C:
 				err = c.heartBeat(ins)
 				if err != nil {
-					if statusError.IsNotFound(err) || statusError.IsInternal(err) {
+					if errors.IsNotFound(err) || errors.IsInternalServer(err) {
 						time.Sleep(time.Millisecond * 500)
 						// 如果注册中心报错500或者404，则重新注册
 						err = c.register(ins)

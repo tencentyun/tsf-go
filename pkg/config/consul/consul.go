@@ -12,10 +12,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/tencentyun/tsf-go/pkg/config"
 	"github.com/tencentyun/tsf-go/pkg/http"
 	"github.com/tencentyun/tsf-go/pkg/log"
-	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
 
@@ -125,7 +125,7 @@ func (c *Consul) fetch(path string, index int64) (res []config.Spec, consulIndex
 	)
 	header, err = c.queryCli.Get(url, &items)
 	if err != nil {
-		if statusError.IsNotFound(err) {
+		if errors.IsNotFound(err) {
 			err = nil
 		} else {
 			return
@@ -135,11 +135,11 @@ func (c *Consul) fetch(path string, index int64) (res []config.Spec, consulIndex
 		str := header.Get("X-Consul-Index")
 		consulIndex, err = strconv.ParseInt(str, 10, 64)
 		if err != nil {
-			err = statusError.Internal(fmt.Sprintf("consul index invalid: %s", str))
+			err = errors.InternalServer(errors.UnknownReason, fmt.Sprintf("consul index invalid: %s", str))
 			return
 		}
 	} else {
-		err = statusError.New(500, "consul index invalid,no http header found!")
+		err = errors.InternalServer(errors.UnknownReason, "consul index invalid,no http header found!")
 		return
 	}
 	for _, item := range items {
@@ -240,10 +240,10 @@ type Watcher struct {
 func (w *Watcher) Watch(ctx context.Context) (spec []config.Spec, err error) {
 	select {
 	case <-ctx.Done():
-		err = statusError.Deadline("")
+		err = errors.GatewayTimeout(errors.UnknownReason, "")
 		return
 	case <-w.ctx.Done():
-		err = statusError.ClientClosed("")
+		err = errors.ClientClosed(errors.UnknownReason, "")
 		return
 	case <-w.event:
 		spec, _ = w.topic.spec.Load().([]config.Spec)

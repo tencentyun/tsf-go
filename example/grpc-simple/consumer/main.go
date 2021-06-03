@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/tencentyun/tsf-go/pkg/grpc/client"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
-	"github.com/tencentyun/tsf-go/pkg/statusError"
 	pb "github.com/tencentyun/tsf-go/testdata"
 	"google.golang.org/grpc"
 )
@@ -35,10 +34,9 @@ func doWork() {
 		ctx = meta.WithUser(ctx, meta.UserPair{"user", "test2233"})
 		resp, err := greeter.SayHello(ctx, &pb.HelloRequest{Name: "lobster!"})
 		if err != nil {
-			se := new(statusError.StatusError)
+			se := errors.FromError(err)
 			if errors.As(err, &se) {
-				log.Errorf(context.Background(), "got  statusError err: %d %s", se.Code(), se.Reason())
-
+				log.Errorf(context.Background(), "got  statusError err: %d %s", se.StatusCode(), se.Reason)
 			} else {
 				log.Errorf(context.Background(), "got other err: %v", err)
 			}

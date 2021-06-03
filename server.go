@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
 	kgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
@@ -22,12 +23,10 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/auth"
 	"github.com/tencentyun/tsf-go/pkg/auth/authenticator"
 	"github.com/tencentyun/tsf-go/pkg/config/consul"
-	"github.com/tencentyun/tsf-go/pkg/grpc/status"
 	tsfHttp "github.com/tencentyun/tsf-go/pkg/http"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/pkg/naming"
-	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 	"github.com/tencentyun/tsf-go/pkg/sys/trace"
@@ -209,13 +208,8 @@ func ServerMiddleware() middleware.Middleware {
 			defer func() {
 				var code = 200
 				if err != nil {
-					if ec, ok := err.(*statusError.StatusError); ok {
-						code = int(ec.Code())
-					} else {
-						code = 500
-					}
+					code = errors.FromError(err).StatusCode()
 					span.Tag("exception", err.Error())
-					err = status.ToGrpcStatus(err)
 				}
 				span.Tag("resultStatus", strconv.FormatInt(int64(code), 10))
 				stat.Record(code)

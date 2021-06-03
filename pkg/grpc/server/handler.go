@@ -6,17 +6,15 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/tencentyun/tsf-go/pkg/grpc/status"
+	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/openzipkin/zipkin-go"
+	"github.com/openzipkin/zipkin-go/model"
 	tsfHttp "github.com/tencentyun/tsf-go/pkg/http"
 	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
-	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 	"github.com/tencentyun/tsf-go/pkg/util"
-
-	"github.com/openzipkin/zipkin-go"
-	"github.com/openzipkin/zipkin-go/model"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -122,13 +120,8 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 	defer func() {
 		var code = 200
 		if err != nil {
-			if ec, ok := err.(*statusError.StatusError); ok {
-				code = int(ec.Code())
-			} else {
-				code = 500
-			}
+			code = errors.FromError(err).StatusCode()
 			span.Tag("exception", err.Error())
-			err = status.ToGrpcStatus(err)
 		}
 		span.Tag("resultStatus", strconv.FormatInt(int64(code), 10))
 		stat.Record(code)
@@ -157,13 +150,8 @@ func (s *Server) handleStream(srv interface{}, stream grpc.ServerStream, info *g
 	defer func() {
 		var code = 200
 		if err != nil {
-			if ec, ok := err.(*statusError.StatusError); ok {
-				code = int(ec.Code())
-			} else {
-				code = 500
-			}
+			code = errors.FromError(err).StatusCode()
 			span.Tag("exception", err.Error())
-			err = status.ToGrpcStatus(err)
 		}
 		span.Tag("resultStatus", strconv.FormatInt(int64(code), 10))
 		stat.Record(code)

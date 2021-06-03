@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
@@ -16,11 +17,9 @@ import (
 	"github.com/openzipkin/zipkin-go/model"
 	"github.com/openzipkin/zipkin-go/propagation/b3"
 	"github.com/tencentyun/tsf-go/pkg/grpc/balancer/multi"
-	"github.com/tencentyun/tsf-go/pkg/grpc/status"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/pkg/route/composite"
 	"github.com/tencentyun/tsf-go/pkg/route/lane"
-	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 	"google.golang.org/grpc/metadata"
@@ -135,12 +134,8 @@ func ClientMiddleware() middleware.Middleware {
 			stat := getClientStat(ctx, remoteServiceName, api)
 			defer func() {
 				var code = 200
-				if err = status.FromGrpcStatus(err); err != nil {
-					if ec, ok := err.(*statusError.StatusError); ok {
-						code = int(ec.Code())
-					} else {
-						code = 500
-					}
+				if err != nil {
+					code = errors.FromError(err).StatusCode()
 				}
 				stat.Record(code)
 				span := zipkin.SpanFromContext(ctx)
