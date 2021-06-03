@@ -141,12 +141,8 @@ github.com/go-ini/ini v1.25.4/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3I
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kratos/kratos/v2 v2.0.0-20210527131947-b32e7d6e701f h1:/GsRaJ0x7ciWG+5fZlZ6SVxGlnHJwrGnThDj0f5k19g=
 github.com/go-kratos/kratos/v2 v2.0.0-20210527131947-b32e7d6e701f/go.mod h1:puDEhRv+dqKa4ZdlInEAbO8ibGxqNhAXFjGleIRh9V4=
-github.com/go-kratos/kratos/v2 v2.0.0-20210601144127-bfc79d5ef001 h1:Af2CYPt7Y6/R9G+PqWP0m51x27IOKhzH6H52F1uMKUo=
-github.com/go-kratos/kratos/v2 v2.0.0-20210601144127-bfc79d5ef001/go.mod h1:puDEhRv+dqKa4ZdlInEAbO8ibGxqNhAXFjGleIRh9V4=
-github.com/go-kratos/kratos/v2 v2.0.0-20210602133438-7bef6cc7d4ed h1:AXW6JHuZ+REXgo+k1Ql5dhl4u1TCueeWdLMI8umcX1o=
-github.com/go-kratos/kratos/v2 v2.0.0-20210602133438-7bef6cc7d4ed/go.mod h1:puDEhRv+dqKa4ZdlInEAbO8ibGxqNhAXFjGleIRh9V4=
-github.com/go-kratos/kratos/v2 v2.0.0-20210602153647-af14c0776241 h1:y9fKnGecQKhgFtxdZ+ZXtUty+WElLtBCXV+tL9IyyDQ=
-github.com/go-kratos/kratos/v2 v2.0.0-20210602153647-af14c0776241/go.mod h1:puDEhRv+dqKa4ZdlInEAbO8ibGxqNhAXFjGleIRh9V4=
+github.com/go-kratos/kratos/v2 v2.0.0-20210603140842-48851a1ffdfe h1:7MPqMm549Jvk3x9iOjsu10SqtoG6iucFLhjWCN/2G44=
+github.com/go-kratos/kratos/v2 v2.0.0-20210603140842-48851a1ffdfe/go.mod h1:puDEhRv+dqKa4ZdlInEAbO8ibGxqNhAXFjGleIRh9V4=
 github.com/go-kratos/swagger-api v0.1.1 h1:RVnx02D0TPrtLjI4ryGs0SdZDCwyygb1smof/3hJdwo=
 github.com/go-kratos/swagger-api v0.1.1/go.mod h1:RPARxyK1ujLqJPu93nOuadQgeHeoqzdaG3yrXsS7wII=
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
