@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/http"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
@@ -245,7 +245,7 @@ func (c *Consul) catalog(index int64) (services map[string]interface{}, consulIn
 	}
 	defer func() {
 		if err != nil {
-			log.Error(context.Background(), "[naming] get catalog failed!", zap.String("url", url), zap.Error(err))
+			log.DefaultLog.Errorw("msg", "[naming] get catalog failed!", "url", url, "error", zap.Error(err))
 		}
 	}()
 	var header xhttp.Header
@@ -296,7 +296,7 @@ func (c *Consul) healthService(svc naming.Service, index int64) (nodes []CheckSe
 	}
 	defer func() {
 		if err != nil {
-			log.Error(context.Background(), "[naming] get healthService failed!", zap.String("name", svc.Name), zap.String("url", url), zap.Error(err))
+			log.DefaultLog.Errorw("msg", "[naming] get healthService failed!", "name", svc.Name, "url", url, "err", err)
 		}
 	}()
 	var header xhttp.Header
@@ -344,9 +344,9 @@ func (c *Consul) register(ins *naming.Instance) (err error) {
 	}
 	err = c.setCli.Put(url, sd, nil)
 	if err != nil {
-		log.Error(context.Background(), "[naming] register instance to consul failed!", zap.Any("instance", sd), zap.String("url", url), zap.Error(err))
+		log.DefaultLog.Errorw("msg", "[naming] register instance to consul failed!", "instance", sd, "url", url, "err", err)
 	} else {
-		log.Info(context.Background(), "[naming] register instance to consul success!", zap.Any("instance", sd), zap.String("url", url))
+		log.DefaultLog.Infow("msg", "[naming] register instance to consul success!", "instance", sd, "url", url)
 	}
 	return
 }
@@ -361,7 +361,7 @@ func (c *Consul) heartBeat(ins *naming.Instance) (err error) {
 	}
 	err = c.setCli.Put(url, nil, nil)
 	if err != nil {
-		log.Error(context.Background(), "[naming] send heartbeat to consul failed!", zap.String("id", ins.ID), zap.String("url", url), zap.Error(err))
+		log.DefaultLog.Errorw("msg", "[naming] send heartbeat to consul failed!", "id", ins.ID, "url", url, "err", err)
 	}
 	return
 }
@@ -376,7 +376,7 @@ func (c *Consul) deregister(ins *naming.Instance) (err error) {
 	}
 	err = c.setCli.Put(url, nil, nil)
 	if err != nil {
-		log.Error(context.Background(), "[naming] deregister ins to consul failed!", zap.String("id", ins.ID), zap.String("url", url), zap.Error(err))
+		log.DefaultLog.Errorw("msg", "[naming] deregister ins to consul failed!", "id", ins.ID, "url", url, "err", err)
 	}
 	return
 }
@@ -423,7 +423,7 @@ func (c *Consul) Register(ins *naming.Instance) (err error) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Debug(ctx, "[naming] recevie exit signal,quit register!", zap.String("id", ins.ID), zap.String("name", ins.Service.Name))
+				log.DefaultLog.Debugw("msg", "[naming] recevie exit signal,quit register!", "id", ins.ID, "name", ins.Service.Name)
 				return
 			case <-timer.C:
 				err = c.heartBeat(ins)
@@ -448,7 +448,7 @@ func (c *Consul) Register(ins *naming.Instance) (err error) {
 }
 
 func (c *Consul) Deregister(ins *naming.Instance) (err error) {
-	log.Info(context.Background(), "deregister service!", zap.String("svc", ins.Service.Name))
+	log.DefaultLog.Infow("msg", "deregister service!", "svc", ins.Service.Name)
 	c.lock.RLock()
 	v, ok := c.registry[ins.ID]
 	c.lock.RUnlock()

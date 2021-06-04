@@ -8,11 +8,10 @@ import (
 	"github.com/openzipkin/zipkin-go"
 	tBalancer "github.com/tencentyun/tsf-go/balancer"
 	"github.com/tencentyun/tsf-go/balancer/random"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/naming"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/route"
-	"go.uber.org/zap"
 
 	"google.golang.org/grpc/balancer"
 	"google.golang.org/grpc/balancer/base"
@@ -111,11 +110,11 @@ type Picker struct {
 // Pick pick instances
 func (p *Picker) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
 	svc := naming.NewService(meta.Sys(info.Ctx, meta.DestKey(meta.ServiceName)).(string), meta.Sys(info.Ctx, meta.DestKey(meta.ServiceNamespace)).(string))
-	log.Debug(info.Ctx, "picker pick", zap.Any("svc", svc), zap.Any("nodes", p.instances))
+	log.DefaultLog.Debugw("msg", "picker pick", "svc", svc, "nodes", p.instances)
 
 	nodes := p.r.Select(info.Ctx, *svc, p.instances)
 	if len(nodes) == 0 {
-		log.Error(info.Ctx, "picker: ErrNoSubConnAvailable!", zap.String("service", svc.Name))
+		log.DefaultLog.Errorw("msg", "picker: ErrNoSubConnAvailable!", "service", svc.Name)
 		return balancer.PickResult{}, balancer.ErrNoSubConnAvailable
 	}
 	node, _ := p.b.Pick(info.Ctx, nodes)

@@ -5,9 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
-	"go.uber.org/zap"
 )
 
 type TagType int32
@@ -35,10 +34,10 @@ func (t Tag) Hit(ctx context.Context) bool {
 	var v interface{}
 	if t.Type == TypeSys {
 		v = meta.Sys(ctx, t.Field)
-		log.Debug(ctx, "hit sys:", zap.String("field", t.Field), zap.Any("value", v))
+		log.DefaultLog.WithContext(ctx).Debugw("msg", "hit sys:", "field", t.Field, "value", v)
 	} else {
 		v = meta.User(ctx, t.Field)
-		log.Debug(ctx, "hit user:", zap.String("field", t.Field), zap.Any("value", v))
+		log.DefaultLog.WithContext(ctx).Debugw("msg", "hit user:", "field", t.Field, "value", v)
 	}
 	if v == nil {
 		return false

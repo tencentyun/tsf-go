@@ -11,13 +11,11 @@ import (
 
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/registry"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/naming"
 	"github.com/tencentyun/tsf-go/pkg/http"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
-
-	"go.uber.org/zap"
 )
 
 // Used to return information about a node
@@ -192,7 +190,7 @@ func (c *Consul) catalog(index int64) (services map[string]interface{}, consulIn
 	}
 	defer func() {
 		if err != nil {
-			log.Error(context.Background(), "[naming] get catalog failed!", zap.String("url", url), zap.Error(err))
+			log.DefaultLog.Errorw("msg", "[naming] get catalog failed!", "url", url, "err", err)
 		}
 	}()
 	var header xhttp.Header
@@ -243,7 +241,7 @@ func (c *Consul) healthService(svc naming.Service, index int64) (nodes []CheckSe
 	}
 	defer func() {
 		if err != nil {
-			log.Error(context.Background(), "[naming] get healthService failed!", zap.String("name", svc.Name), zap.String("url", url), zap.Error(err))
+			log.DefaultLog.Error("msg", "[naming] get healthService failed!", "name", svc.Name, "url", url, "err", err)
 		}
 	}()
 	var header xhttp.Header

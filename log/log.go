@@ -17,7 +17,8 @@ import (
 
 var (
 	// DefaultLog is default tsf logger
-	DefaultLog *log.Helper = log.NewHelper(NewLogger())
+	DefaultLogger log.Logger  = NewLogger()
+	DefaultLog    *log.Helper = log.NewHelper(DefaultLogger)
 )
 
 func newZap() *zap.Logger {
@@ -126,7 +127,7 @@ func (l *tsfLogger) Log(level log.Level, keyvals ...interface{}) error {
 
 	fmt.Fprintf(buf, "[%s] %s", trace, msg)
 	for i := 0; i < len(newKvs); i += 2 {
-		fmt.Fprintf(buf, " %s=%v", keyvals[i], keyvals[i+1])
+		fmt.Fprintf(buf, " %s=%v", newKvs[i], newKvs[i+1])
 	}
 	if level == log.LevelDebug {
 		l.logger.Debug(buf.String())
@@ -147,6 +148,11 @@ func (l *tsfLogger) Log(level log.Level, keyvals ...interface{}) error {
 func NewLogger() log.Logger {
 	logger := newTSFLogger()
 	return log.With(logger, "trace", Trace())
+}
+
+// NewHelper return tsf new logger helper
+func NewHelper(l log.Logger) *log.Helper {
+	return log.NewHelper(l)
 }
 
 // Trace returns a traceid valuer.

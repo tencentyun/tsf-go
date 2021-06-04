@@ -8,11 +8,10 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http/balancer"
 	"github.com/openzipkin/zipkin-go"
 	tBalancer "github.com/tencentyun/tsf-go/balancer"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/naming"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/route"
-	"go.uber.org/zap"
 )
 
 type Balancer struct {
@@ -31,10 +30,10 @@ func (b *Balancer) Pick(ctx context.Context, pathPattern string, nodes []*regist
 		inss = append(inss, *naming.FromKratosInstance(node)[0])
 	}
 	svc := naming.NewService(meta.Sys(ctx, meta.DestKey(meta.ServiceName)).(string), meta.Sys(ctx, meta.DestKey(meta.ServiceNamespace)).(string))
-	log.Debug(ctx, "picker pick", zap.Any("svc", svc), zap.Any("nodes", inss))
+	log.DefaultLog.Debugw("msg", "picker pick", "svc", svc, "nodes", inss)
 	filters := b.r.Select(ctx, *svc, inss)
 	if len(nodes) == 0 {
-		log.Error(ctx, "picker: ErrNoSubConnAvailable!", zap.String("service", svc.Name))
+		log.DefaultLog.Errorw("msg", "picker: ErrNoSubConnAvailable!", "service", svc.Name)
 		return nil, nil, fmt.Errorf("no instances avaiable")
 	}
 	ins, _ := b.b.Pick(ctx, filters)

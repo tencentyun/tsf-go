@@ -7,7 +7,7 @@ import (
 	"runtime"
 
 	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/log"
 	"google.golang.org/grpc"
 )
 
@@ -23,7 +23,7 @@ func (s *Server) recovery(ctx context.Context, req interface{}, info *grpc.Unary
 			buf = buf[:rs]
 			pl := fmt.Sprintf("grpc server panic: %v\n%v\n%s\n", req, rerr, buf)
 			fmt.Fprintf(os.Stderr, pl)
-			log.Error(ctx, pl)
+			log.DefaultLog.WithContext(ctx).Error(pl)
 			err = errors.InternalServer(errors.UnknownReason, "")
 		}
 	}()
@@ -43,7 +43,7 @@ func (s *Server) recoveryStream(srv interface{}, stream grpc.ServerStream, info 
 			buf = buf[:rs]
 			pl := fmt.Sprintf("grpc server panic: %v\n%v\n%s\n", srv, rerr, buf)
 			fmt.Fprintf(os.Stderr, pl)
-			log.Error(stream.Context(), pl)
+			log.DefaultLog.WithContext(stream.Context()).Error(pl)
 			err = errors.InternalServer(errors.UnknownReason, "")
 		}
 	}()

@@ -9,13 +9,12 @@ import (
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/openzipkin/zipkin-go"
 	"github.com/openzipkin/zipkin-go/model"
+	"github.com/tencentyun/tsf-go/log"
 	tsfHttp "github.com/tencentyun/tsf-go/pkg/http"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 	"github.com/tencentyun/tsf-go/pkg/util"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
@@ -44,7 +43,7 @@ func (s *Server) startContext(ctx context.Context, api string) context.Context {
 					if e == nil {
 						e = json.Unmarshal([]byte(v), &tsfMeta)
 					} else {
-						log.Info(ctx, "grpc http parse header TSF-Metadata failed!", zap.String("meta", v), zap.Error(e))
+						log.DefaultLog.WithContext(ctx).Infow("msg", "grpc http parse header TSF-Metadata failed!", "meta", v, "err", e)
 					}
 				}
 				sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ApplicationID), Value: tsfMeta.ApplicationID})
@@ -61,7 +60,7 @@ func (s *Server) startContext(ctx context.Context, api string) context.Context {
 					if e == nil {
 						e = json.Unmarshal([]byte(v), &tags)
 					} else {
-						log.Info(ctx, "grpc http parse header TSF-Tags failed!", zap.String("tags", vals[0]), zap.Error(e))
+						log.DefaultLog.WithContext(ctx).Info("mg", "grpc http parse header TSF-Tags failed!", "tags", vals[0], "err", e)
 					}
 				}
 				for _, tag := range tags {

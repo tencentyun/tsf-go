@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/config"
 	"github.com/tencentyun/tsf-go/pkg/config/consul"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
-	"go.uber.org/zap"
 )
 
 var mu sync.RWMutex
@@ -57,7 +56,7 @@ func (c *Config) Raw() []byte {
 func (c *Config) refill() {
 	err := c.Data.Unmarshal(c.v)
 	if err != nil {
-		log.Error(context.Background(), "config refill failed!", zap.Error(err), zap.String("raw", string(c.Raw())))
+		log.DefaultLog.Errorw("msg", "config refill failed!", "err", err, "raw", string(c.Raw()))
 	}
 }
 
@@ -100,7 +99,7 @@ func refreshGlobal() {
 	for {
 		specs, err := globalWatcher.Watch(ctx)
 		if err != nil {
-			log.Error(ctx, "refreshGlobal Watch failed!", zap.Error(err))
+			log.DefaultLog.Errorw("msg", "refreshGlobal Watch failed!", "err", err)
 			return
 		}
 		var conf *Config
@@ -124,7 +123,7 @@ func refreshApp() {
 	for {
 		specs, err := appWatcher.Watch(ctx)
 		if err != nil {
-			log.Error(ctx, "refreshApp Watch failed!", zap.Error(err))
+			log.DefaultLog.Errorw("msg", "refreshApp Watch failed!", "err", err)
 			return
 		}
 		var conf *Config

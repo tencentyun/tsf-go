@@ -4,14 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 
 	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
+	"github.com/tencentyun/tsf-go/log"
 
 	tsf "github.com/tencentyun/tsf-go"
 )
@@ -28,7 +27,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 
 func main() {
 	flag.Parse()
-	logger := log.NewStdLogger(os.Stdout)
+	logger := log.DefaultLogger
 	log := log.NewHelper(logger)
 
 	s := &server{}

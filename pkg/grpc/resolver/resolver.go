@@ -7,10 +7,9 @@ import (
 	"sync"
 
 	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
-	"go.uber.org/zap"
 	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/resolver"
 )
@@ -56,7 +55,7 @@ func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, opts res
 		nid = env.NamespaceID()
 	}
 	svc := naming.NewService(nid, str[0])
-	log.Debug(context.Background(), "[grpc resovler] start subscribe service", zap.String("svc", svc.Name))
+	log.DefaultLog.Debugw("msg", "[grpc resovler] start subscribe service", "svc", svc.Name)
 	r := &Resolver{
 		watcher: b.Subscribe(svc),
 		cc:      cc,
@@ -76,7 +75,7 @@ type Resolver struct {
 
 // Close is a noop for Resolver.
 func (r *Resolver) Close() {
-	log.Info(context.Background(), "[grpc resovler] close subscribe service", zap.String("serviceName", r.svc.Name), zap.String("namespace", r.svc.Namespace))
+	log.DefaultLog.Infow("msg", "[grpc resovler] close subscribe service", "serviceName", r.svc.Name, "namespace", r.svc.Namespace)
 	r.watcher.Close()
 }
 
@@ -109,6 +108,6 @@ func (r *Resolver) newAddress(instances []naming.Instance) {
 		addr.Attributes = attributes.New("rawInstance", ins)
 		addrs = append(addrs, addr)
 	}
-	log.Info(context.Background(), "[resolver] newAddress found!", zap.Int("length", len(addrs)), zap.String("serviceName", r.svc.Name), zap.String("namespace", r.svc.Namespace))
+	log.DefaultLog.Info("msg", "[resolver] newAddress found!", "length", len(addrs), "serviceName", r.svc.Name, "namespace", r.svc.Namespace)
 	r.cc.NewAddress(addrs)
 }

@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/naming"
 	"github.com/tencentyun/tsf-go/pkg/config"
 	"github.com/tencentyun/tsf-go/pkg/config/consul"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/route"
@@ -100,7 +100,7 @@ func (l *Lane) Select(ctx context.Context, svc naming.Service, nodes []naming.In
 	lane, ok := l.allLanes[laneID]
 	if !ok {
 		l.mu.RUnlock()
-		log.Error(ctx, "[lane.Select] no lane info found in allLanes!", zap.String("laneID", laneID))
+		log.DefaultLog.WithContext(ctx).Errorw("msg", "[lane.Select] no lane info found in allLanes!", "laneID", laneID)
 		return nodes
 	}
 	serviceHit := l.services[laneID]
@@ -148,7 +148,7 @@ func (l *Lane) selectColor(ctx context.Context, nodes []naming.Instance, lane La
 			}
 		}
 	}
-	log.Debug(ctx, "lane take effect, choose color instance!", zap.Any("color_nodes", colors))
+	log.DefaultLog.Debugw("msg", "lane take effect, choose color instance!", "color_nodes", colors)
 	return colors
 }
 
@@ -174,7 +174,7 @@ func (l *Lane) selectNormal(ctx context.Context, svc naming.Service, nodes []nam
 		normal = append(normal, node)
 	}
 	if len(color) > 0 {
-		log.Debug(ctx, "lane take effect, filter color instance!", zap.Any("color_nodes", color))
+		log.DefaultLog.Debugw("msg", "lane take effect, filter color instance!", "color_nodes", color)
 	}
 	return normal
 }
@@ -184,10 +184,10 @@ func (l *Lane) refreshAllRule() {
 		specs, err := l.ruleWatcher.Watch(l.ctx)
 		if err != nil {
 			if errors.IsGatewayTimeout(err) || errors.IsClientClosed(err) {
-				log.Error(context.Background(), "watch lane config deadline or clsoe!exit now!", zap.Error(err))
+				log.DefaultLog.Errorw("msg", "watch lane config deadline or clsoe!exit now!", "error", err)
 				return
 			}
-			log.Error(context.Background(), "watch lane config failed!", zap.Error(err))
+			log.DefaultLog.Errorw("msg", "watch lane config failed!", "error", err)
 			continue
 		}
 		var allRules []LaneRule
@@ -195,16 +195,16 @@ func (l *Lane) refreshAllRule() {
 			var rule LaneRule
 			err = spec.Data.Unmarshal(&rule)
 			if err != nil {
-				log.Error(context.Background(), "unmarshal lane rule config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
+				log.DefaultLog.Errorw("msg", "unmarshal lane rule config failed!", "err", err, "raw", spec.Data.Raw())
 				continue
 			}
 			allRules = append(allRules, rule)
 		}
 		if len(allRules) == 0 && err != nil {
-			log.Error(context.Background(), "get lane rule config failed,not override old data!")
+			log.DefaultLog.Error("get lane rule config failed,not override old data!")
 			continue
 		}
-		log.Infof(context.Background(), "[lane] found new lane rule,replace now!rules: %v", allRules)
+		log.DefaultLog.Infof("[lane] found new lane rule,replace now!rules: %v", allRules)
 		l.mu.Lock()
 		l.allRules = allRules
 		l.mu.Unlock()
@@ -218,10 +218,10 @@ func (l *Lane) refreshAllLane() {
 		specs, err := l.laneWathcer.Watch(l.ctx)
 		if err != nil {
 			if errors.IsGatewayTimeout(err) || errors.IsClientClosed(err) {
-				log.Error(context.Background(), "watch lane config deadline or clsoe!exit now!", zap.Error(err))
+				log.DefaultLog.Errorw("msg", "watch lane config deadline or clsoe!exit now!", "err", err)
 				return
 			}
-			log.Error(context.Background(), "watch lane config failed!", zap.Error(err))
+			log.DefaultLog.Errorw("msg", "watch lane config failed!", "err", zap.Error(err))
 			time.Sleep(time.Second)
 			continue
 		}
@@ -230,17 +230,17 @@ func (l *Lane) refreshAllLane() {
 			var lane LaneInfo
 			err = spec.Data.Unmarshal(&lane)
 			if err != nil {
-				log.Error(context.Background(), "unmarshal lane config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
+				log.DefaultLog.Errorw("msg", "unmarshal lane config failed!", "err", err, "raw", string(spec.Data.Raw()))
 				time.Sleep(time.Second)
 				continue
 			}
 			allLanes[lane.ID] = lane
 		}
 		if len(allLanes) == 0 && err != nil {
-			log.Error(context.Background(), "get lane info config failed,not override old data!")
+			log.DefaultLog.Error("get lane info config failed,not override old data!")
 			continue
 		}
-		log.Infof(context.Background(), "[lane] found new lane info,replace now!lanes: %v", allLanes)
+		log.DefaultLog.Infof("[lane] found new lane info,replace now!lanes: %v", allLanes)
 		l.mu.Lock()
 		l.allLanes = allLanes
 		l.mu.Unlock()

@@ -1,14 +1,12 @@
 package monitor
 
 import (
-	"context"
 	"encoding/json"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/log"
-	"go.uber.org/zap"
+	"github.com/tencentyun/tsf-go/log"
 )
 
 var monitor *Monitor
@@ -130,7 +128,7 @@ func (m *Monitor) dump(old map[string][]*Stat) {
 		metric.Invocation = invocation
 		content, err := json.Marshal(metric)
 		if err != nil {
-			log.Error(context.Background(), "Monitor Marshal failed!", zap.Any("metric", metric))
+			log.DefaultLog.Errorf("Monitor Marshal failed!metric:%v", metric)
 			return
 		}
 		logger.Info(string(content))

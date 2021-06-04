@@ -6,12 +6,11 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/grpc/server"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/util"
 	pb "github.com/tencentyun/tsf-go/testdata"
 
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
@@ -23,7 +22,7 @@ func main() {
 	server.Use(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		start := time.Now()
 		resp, err = handler(ctx, req)
-		log.Info(ctx, "enter grpc handler!", zap.String("method", info.FullMethod), zap.Duration("dur", time.Since(start)))
+		log.DefaultLog.Infow("msg", "enter grpc handler!", "method", info.FullMethod, "dur", time.Since(start))
 		return
 	})
 

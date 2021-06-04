@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/grpc/client"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	pb "github.com/tencentyun/tsf-go/testdata"
 	"google.golang.org/grpc"
@@ -36,31 +36,31 @@ func doWork() {
 		if err != nil {
 			se := errors.FromError(err)
 			if errors.As(err, &se) {
-				log.Errorf(context.Background(), "got  statusError err: %d %s", se.StatusCode(), se.Reason)
+				log.DefaultLog.Errorf("got  statusError err: %d %s", se.StatusCode(), se.Reason)
 			} else {
-				log.Errorf(context.Background(), "got other err: %v", err)
+				log.DefaultLog.Errorf("got other err: %v", err)
 			}
 			continue
 		}
-		log.Infof(context.Background(), "unary SayHello resp: %v", resp)
+		log.DefaultLog.Infof("unary SayHello resp: %v", resp)
 
 		ctx, _ = context.WithTimeout(context.Background(), time.Second*2)
 		stream, err := greeter.SayHelloStream(ctx)
 		if err != nil {
-			log.Errorf(context.Background(), "stream got err: %v", err)
+			log.DefaultLog.Errorf("stream got err: %v", err)
 			continue
 		}
 		err = stream.Send(&pb.HelloRequest{Name: "stream lobser"})
 		if err != nil {
-			log.Errorf(context.Background(), "stream got err: %v", err)
+			log.DefaultLog.Errorf("stream got err: %v", err)
 			continue
 		}
 		resp, err = stream.Recv()
 		if err != nil {
-			log.Errorf(context.Background(), "stream got err: %v", err)
+			log.DefaultLog.Errorf("stream got err: %v", err)
 			continue
 		}
 		stream.CloseSend()
-		log.Infof(context.Background(), "steam SayHello resp: %v", resp)
+		log.DefaultLog.Infof("steam SayHello resp: %v", resp)
 	}
 }

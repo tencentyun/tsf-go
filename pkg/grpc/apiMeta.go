@@ -8,9 +8,8 @@ import (
 
 	"github.com/fullstorydev/grpcurl"
 	"github.com/jhump/protoreflect/grpcreflect"
-	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/sys/apiMeta"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 )
@@ -20,7 +19,7 @@ func GetServiceMethods(addr string) (serDesc map[string]*apiMeta.Service, err er
 	defer cancel()
 	conn, err := grpc.DialContext(ctx, addr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatal(ctx, "dail grpc server failed,process exit now!", zap.String("addr", addr), zap.Error(err))
+		panic(fmt.Errorf("dail grpc server failed,process exit now!addr:=%v err:=%v", addr, err))
 	}
 	cli := rpb.NewServerReflectionClient(conn)
 	refClient := grpcreflect.NewClient(ctx, cli)
@@ -36,7 +35,7 @@ func GetServiceMethods(addr string) (serDesc map[string]*apiMeta.Service, err er
 		}
 		desc, err := reflSource.FindSymbol(service)
 		if err != nil {
-			log.Error(ctx, "FindSymbol failed!", zap.String("symbol", service), zap.Error(err))
+			log.DefaultLog.Errorw("msg", "FindSymbol failed!", "symbol", service, "err", err)
 			continue
 		}
 		for _, s := range desc.GetFile().GetServices() {

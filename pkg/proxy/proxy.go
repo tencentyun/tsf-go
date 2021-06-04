@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 
 	"github.com/elazarl/goproxy"
@@ -40,7 +39,7 @@ func Init() {
 	mu.Unlock()
 
 	if env.SSHHost() == "" || env.SSHUser() == "" {
-		log.Infof(context.Background(), "no ssh_host & ssh_user detected,proxy tunnel exit!")
+		log.DefaultLog.Infof("no ssh_host & ssh_user detected,proxy tunnel exit!")
 		return
 	}
 	var auths []ssh.AuthMethod
@@ -50,13 +49,13 @@ func Init() {
 	if env.SSHPass() == "" && env.SSHKey() != "" {
 		key, err := ioutil.ReadFile(env.SSHKey())
 		if err != nil {
-			log.Errorf(context.Background(), "unable to read private key: %v", err)
+			log.DefaultLog.Errorf("unable to read private key: %v", err)
 			return
 		}
 		// Create the Signer for this private key.
 		signer, err := ssh.ParsePrivateKey(key)
 		if err != nil {
-			log.Errorf(context.Background(), "unable to parse private key: %v", err)
+			log.DefaultLog.Errorf("unable to parse private key: %v", err)
 			return
 		}
 		auths = append(auths, ssh.PublicKeys(signer))
@@ -73,7 +72,7 @@ func Init() {
 	addr := fmt.Sprintf("%s:%d", env.SSHHost(), env.SSHPort())
 	conn, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
-		log.Errorf(context.Background(), "unable to connect to ssh host [%s]: %v", addr, err)
+		log.DefaultLog.Errorf("unable to connect to ssh host [%s]: %v", addr, err)
 		return
 	}
 	client = conn
@@ -83,10 +82,10 @@ func Init() {
 	proxyAddr := fmt.Sprintf("0.0.0.0:%d", proxyPort)
 	os.Setenv("HTTP_PROXY", fmt.Sprintf("http://127.0.0.1:%d", proxyPort))
 	os.Setenv("HTTPS_PROXY", fmt.Sprintf("https://127.0.0.1:%d", proxyPort))
-	log.Infof(context.Background(), "listening for local HTTP PROXY connections on [%s]", proxyAddr)
+	log.DefaultLog.Infof("listening for local HTTP PROXY connections on [%s]", proxyAddr)
 	go func() {
 		err = http.ListenAndServe(proxyAddr, prxy)
-		log.Infof(context.Background(), "proxy ListenAndServe exit with err: %v", err)
+		log.DefaultLog.Infof("proxy ListenAndServe exit with err: %v", err)
 	}()
 	mu.Lock()
 	inited = true
@@ -105,10 +104,10 @@ func Close() {
 
 func ListenRemote(lPort int, rPort int) {
 	// Request the remote side to open port 8080 on all interfaces.
-	log.Infof(context.Background(), "[ListenRemote] listening for remote conn on [:%d] and local conn on [:%d]", rPort, lPort)
+	log.DefaultLog.Infof("[ListenRemote] listening for remote conn on [:%d] and local conn on [:%d]", rPort, lPort)
 	l, err := client.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", rPort))
 	if err != nil {
-		log.Errorf(context.Background(), "[ListenRemote] unable to register tcp forward,err: %v", err)
+		log.DefaultLog.Errorf("[ListenRemote] unable to register tcp forward,err: %v", err)
 		return
 	}
 	mu.Lock()
@@ -117,7 +116,7 @@ func ListenRemote(lPort int, rPort int) {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			log.Errorf(context.Background(), "[ListenRemote] accept remote failed,err: %v", err)
+			log.DefaultLog.Errorf("[ListenRemote] accept remote failed,err: %v", err)
 			return
 		}
 		go serveTcp(conn, lPort)
@@ -128,7 +127,7 @@ func serveTcp(conn net.Conn, localPort int) {
 	defer conn.Close()
 	localConn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", localPort))
 	if err != nil {
-		log.Errorf(context.Background(), "[serveTcp] dial local addr 127.0.0.1:%d failed!err:=%v", localPort, err)
+		log.DefaultLog.Errorf("[serveTcp] dial local addr 127.0.0.1:%d failed!err:=%v", localPort, err)
 		return
 	}
 	defer localConn.Close()

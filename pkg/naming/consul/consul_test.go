@@ -12,10 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
-	"go.uber.org/zap"
 )
 
 var serviceNum int
@@ -66,13 +65,13 @@ func TestConsul(t *testing.T) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGHUP)
 	sig := <-sigs
-	log.Info(ctx, "[server] got signal,exit now!", zap.String("sig", sig.String()))
+	log.DefaultLog.Infow("msg", "[server] got signal,exit now!", "sig", sig.String())
 	cancel()
 	for i := 0; i < count; i++ {
 		<-ch
 	}
 	time.Sleep(time.Millisecond * 800)
-	log.Info(ctx, "clear success!")
+	log.DefaultLog.Info("clear success!")
 	return
 }
 

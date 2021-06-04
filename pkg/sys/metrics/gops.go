@@ -8,7 +8,7 @@ import (
 	"net/http/pprof"
 
 	"github.com/google/gops/agent"
-	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"go.uber.org/zap"
 )
@@ -31,16 +31,16 @@ func startPprof() {
 
 		lis, err := net.Listen("tcp", addr)
 		if err != nil {
-			log.Errorf(context.Background(), "pprof server listen %s err: %v", addr, err)
+			log.DefaultLog.Errorf("pprof server listen %s err: %v", addr, err)
 			return
 		}
 		server := http.Server{
 			Handler: mux,
 			Addr:    addr,
 		}
-		log.Debug(context.Background(), "pprof http server start serve. To disable it,set tsf_disable_pprof=true", zap.String("addr", addr))
+		log.DefaultLog.Debugf("pprof http server start serve. To disable it,set tsf_disable_pprof=true", zap.String("addr", addr))
 		if err = server.Serve(lis); err != nil {
-			log.Errorf(context.Background(), "pprof server serve  err: %v", err)
+			log.DefaultLog.Errorf("pprof server serve  err: %v", err)
 			return
 		}
 	}
@@ -49,9 +49,9 @@ func startPprof() {
 func startGops() {
 	if !env.DisableDisableGops() {
 		addr := fmt.Sprintf(":%d", env.GopsPort())
-		log.Debug(context.Background(), "gops agent start serve.  To disable it,set tsf_disable_gops=true", zap.String("addr", addr))
+		log.DefaultLog.Debug(context.Background(), "gops agent start serve.  To disable it,set tsf_disable_gops=true", zap.String("addr", addr))
 		if err := agent.Listen(agent.Options{Addr: addr}); err != nil {
-			log.Errorf(context.Background(), "gops agent.Listen %s err: %v", addr, err)
+			log.DefaultLog.Errorf("gops agent.Listen %s err: %v", addr, err)
 			return
 		}
 	}
