@@ -6,7 +6,7 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/fullstorydev/grpcurl v1.8.1
 	github.com/gin-gonic/gin v1.7.2
-	github.com/go-kratos/kratos/v2 v2.0.0-20210603140842-48851a1ffdfe
+	github.com/go-kratos/kratos/v2 v2.0.0-20210603145140-97946ddcbd26
 	github.com/go-kratos/swagger-api v0.1.1
 	github.com/go-playground/validator/v10 v10.6.1 // indirect
 	github.com/gogo/protobuf v1.3.2
@@ -15,7 +15,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jhump/protoreflect v1.8.2
 	github.com/json-iterator/go v1.1.11 // indirect
-	github.com/klauspost/compress v1.12.3 // indirect
+	github.com/klauspost/compress v1.13.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/longXboy/go-grpc-http1 v0.0.0-20201202084506-0a6dbcb9e0f7
@@ -31,8 +31,8 @@ require (
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5
-	golang.org/x/sys v0.0.0-20210601080250-7ecdf8ef093b // indirect
-	google.golang.org/genproto v0.0.0-20210601170153-0befbe3492e2
+	golang.org/x/sys v0.0.0-20210603125802-9665404d3644 // indirect
+	google.golang.org/genproto v0.0.0-20210603172842-58e84a565dcf
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
