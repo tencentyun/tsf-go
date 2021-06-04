@@ -1,97 +1,55 @@
 package tconf
 
-// tconf is tsf remote config
-
 import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/config"
-	"github.com/tencentyun/tsf-go/pkg/config/consul"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
 )
 
 var mu sync.RWMutex
-var inited bool
 
-var global *Config
-var app *Config
+var global config.Config
+var app config.Config
 
-var globalFunc []func(conf *Config)
-var appFunc []func(conf *Config)
+var globalFunc []func(conf config.Config)
+var appFunc []func(conf config.Config)
 
 var globalWatcher config.Watcher
 var appWatcher config.Watcher
+var sources map[string]config.Source
 
-type Config struct {
-	v map[string]interface{}
-	config.Data
-}
+// Init 需要提前初始化，否则可能获取不到数据
+func init() {
+	util.ParseFlag()
+	source := sources["consul"]
+	appWatcher = source.Subscribe(fmt.Sprintf("config/application/%s/%s/data", env.ApplicationID(), env.GroupID()))
+	globalWatcher = source.Subscribe(fmt.Sprintf("config/application/%s/data", env.NamespaceID()))
 
-func (c *Config) Get(key string) (res interface{}, ok bool) {
-	if c == nil {
+	appSpecs, err := appWatcher.Watch(context.Background())
+	if err != nil {
+		log.DefaultLog.Errorf("config watch failed!err:=%v", err)
 		return
 	}
-	res, ok = c.v[key]
-	return
-}
-
-func (c *Config) Unmarshal(v interface{}) error {
-	if c == nil || c.Data == nil {
-		return nil
-	}
-	return c.Data.Unmarshal(v)
-}
-
-func (c *Config) Raw() []byte {
-	if c == nil || c.Data == nil {
-		return nil
-	}
-	return c.Data.Raw()
-}
-
-func (c *Config) refill() {
-	err := c.Data.Unmarshal(c.v)
+	gloablSpecs, err := globalWatcher.Watch(context.Background())
 	if err != nil {
-		log.DefaultLog.Errorw("msg", "config refill failed!", "err", err, "raw", string(c.Raw()))
+		log.DefaultLog.Errorf("config watch failed!err:=%v", err)
+		return
 	}
-}
-
-// 需要提前初始化，否则可能获取不到数据
-func Init(ctx context.Context) error {
-	util.ParseFlag()
-	mu.Lock()
-	defer mu.Unlock()
-	if inited {
-		return nil
-	}
-	appWatcher = consul.DefaultConsul().Subscribe(fmt.Sprintf("config/application/%s/%s/data", env.ApplicationID(), env.GroupID()))
-	globalWatcher = consul.DefaultConsul().Subscribe(fmt.Sprintf("config/application/%s/data", env.NamespaceID()))
-
-	appSpecs, err := appWatcher.Watch(ctx)
-	if err != nil {
-		return err
-	}
-	gloablSpecs, err := globalWatcher.Watch(ctx)
-	if err != nil {
-		return err
-	}
-	inited = true
 	if len(appSpecs) > 0 {
-		app = &Config{v: map[string]interface{}{}, Data: appSpecs[0].Data}
-		app.refill()
+		app = newTsfConfig(appSpecs[0].Data)
 	}
 	if len(gloablSpecs) > 0 {
-		global = &Config{v: map[string]interface{}{}, Data: gloablSpecs[0].Data}
-		global.refill()
+		global = newTsfConfig(gloablSpecs[0].Data)
 	}
 
 	go refreshApp()
 	go refreshGlobal()
-	return nil
 }
 
 func refreshGlobal() {
@@ -102,10 +60,9 @@ func refreshGlobal() {
 			log.DefaultLog.Errorw("msg", "refreshGlobal Watch failed!", "err", err)
 			return
 		}
-		var conf *Config
+		var conf config.Config
 		if len(specs) > 0 {
-			conf = &Config{v: map[string]interface{}{}, Data: specs[0].Data}
-			conf.refill()
+			conf = newTsfConfig(specs[0].Data)
 		}
 		mu.Lock()
 		global = conf
@@ -126,10 +83,9 @@ func refreshApp() {
 			log.DefaultLog.Errorw("msg", "refreshApp Watch failed!", "err", err)
 			return
 		}
-		var conf *Config
+		var conf config.Config
 		if len(specs) > 0 {
-			conf = &Config{v: map[string]interface{}{}, Data: specs[0].Data}
-			conf.refill()
+			conf = newTsfConfig(specs[0].Data)
 		}
 		mu.Lock()
 		app = conf
@@ -142,38 +98,116 @@ func refreshApp() {
 	}
 }
 
-// GlobalConfig 订阅全局配置文件的变化
-func GlobalConfig(f func(conf *Config)) {
-	f(global)
+// GetConfig 获取配置文件
+func GetConfig(opts ...Option) {
+	var opt options
+	for _, o := range opts {
+		o(&opt)
+	}
 	mu.Lock()
 	defer mu.Unlock()
-	globalFunc = append(globalFunc, f)
+
 }
 
-// AppConfig 订阅应用级别配置文件的变化
-func AppConfig(f func(conf *Config)) {
-	f(app)
+// WatchConfig 订阅配置文件的变化
+func WatchConfig(f func(conf config.Config), opts ...Option) {
+	var opt options
+	for _, o := range opts {
+		o(&opt)
+	}
 	mu.Lock()
 	defer mu.Unlock()
+	if opt.isGlobal {
+		globalFunc = append(globalFunc, f)
+		return
+	}
 	appFunc = append(appFunc, f)
+	return
 }
 
-// GetApp 非阻塞获取应用配置的key value
-func GetApp(key string) (res interface{}, ok bool) {
+func getCfg(opts ...Option) config.Config {
+	var cfg config.Config
+	var opt options
+	for _, o := range opts {
+		o(&opt)
+	}
 	mu.RLock()
 	defer mu.RUnlock()
-	if app != nil {
-		res, ok = app.Get(key)
+	if opt.isGlobal {
+		cfg = global
+	} else {
+		cfg = app
+	}
+	return cfg
+}
+
+// Get 非阻塞获取配置的key value
+func Get(key string, opts ...Option) (res interface{}, ok bool) {
+	cfg := getCfg(opts...)
+	if cfg != nil {
+		return cfg.Get(key)
 	}
 	return
 }
 
-// GetGlobal 非阻塞获取全局配置的key value
-func GetGlobal(key string) (res interface{}, ok bool) {
-	mu.RLock()
-	defer mu.RUnlock()
-	if global != nil {
-		res, ok = global.Get(key)
+func GetString(key string, opts ...Option) (v string, ok bool) {
+	cfg := getCfg(opts...)
+	if cfg != nil {
+		return cfg.GetString(key)
 	}
 	return
 }
+
+func GetBool(key string, opts ...Option) (v bool, ok bool) {
+	cfg := getCfg(opts...)
+	if cfg != nil {
+		return cfg.GetBool(key)
+	}
+	return
+}
+
+func GetInt(key string, opts ...Option) (v int64, ok bool) {
+	cfg := getCfg(opts...)
+	if cfg != nil {
+		return cfg.GetInt(key)
+	}
+	return
+}
+
+func GetFloat(key string, opts ...Option) (v float64, ok bool) {
+	cfg := getCfg(opts...)
+	if cfg != nil {
+		return cfg.GetFloat(key)
+	}
+	return
+}
+
+func GetDuration(key string, opts ...Option) (v time.Duration, ok bool) {
+	cfg := getCfg(opts...)
+	if cfg != nil {
+		return cfg.GetDuration(key)
+	}
+	return
+}
+
+func GetTime(key string, opts ...Option) (v time.Time, ok bool) {
+	cfg := getCfg(opts...)
+	if cfg != nil {
+		return cfg.GetTime(key)
+	}
+	return
+}
+
+type options struct {
+	isGlobal bool
+}
+
+// WithGlobal is with global config
+func WithGlobal(isGlobal bool) Option {
+	return func(o *options) {
+		o.isGlobal = isGlobal
+	}
+}
+
+// Option is config client option.
+type Option func(*options)

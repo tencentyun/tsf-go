@@ -20,7 +20,7 @@ var (
 type Builder struct {
 }
 
-func (b *Builder) Build(cfg config.Config, svc naming.Service) auth.Auth {
+func (b *Builder) Build(cfg config.Source, svc naming.Service) auth.Auth {
 	watcher := cfg.Subscribe(fmt.Sprintf("authority/%s/%s/data", svc.Namespace, svc.Name))
 	a := &Authenticator{watcher: watcher, svc: svc}
 	a.ctx, a.cancel = context.WithCancel(context.Background())

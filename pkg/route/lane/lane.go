@@ -51,7 +51,7 @@ func DefaultLane() *Lane {
 	return defaultLane
 }
 
-func New(cfg config.Config) (lane *Lane) {
+func New(cfg config.Source) (lane *Lane) {
 	ruleWatcher := cfg.Subscribe("lane/rule/")
 	laneWatcher := cfg.Subscribe("lane/info/")
 	lane = &Lane{

@@ -50,7 +50,7 @@ func DefaultRouter() *Router {
 	return defaultRoute
 }
 
-func New(conf *Config, cfg config.Config) *Router {
+func New(conf *Config, cfg config.Source) *Router {
 	watcher := cfg.Subscribe(fmt.Sprintf("route/%s/", conf.NamespaceID))
 	r := &Router{
 		conf:     conf,

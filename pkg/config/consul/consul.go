@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	_ config.Config = &Consul{}
+	_ config.Source = &Consul{}
 
 	defaultConsul *Consul
 	mu            sync.Mutex
