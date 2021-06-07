@@ -1,11 +1,21 @@
+
+tsf go 为用户现存的 Go 应用提供了接入TSF治理平台的 SDK 插件
+
+# 功能特性
+- 自动集成 TSF 平台治理能力：分布式远程配置、远程日志、分布式调用链追踪、监控、服务鉴权、服务路由、全链路灰度发布、API 自动上报。
+- 同时支持 gRPC 和 HTTP 双协议，可以和JAVA Spring Cloud 服务互相调用。
+- 组件化，方便自定义扩展和插拔。
+- API 规范化，API 协议使用 Protobuf 定义接口，并且 Errors 通过 Enum 作为错误码，以实现错误判定。
+  
+# Quick Start
 ##安装依赖
-####1.安装 protoc v3.15.0+
+#### 1.安装 protoc v3.15.0+
 请根据自己使用的操作系统，优先选择对应的包管理工具安装，如：
 - linux下用yum或apt等安装
 - macOS通过brew安装
 - windows通过下载可执行程序或者其他安装程序来安装
 
-####2.安装 protoc-gen-xxx
+#### 2.安装 protoc-gen-xxx
 go get -u github.com/golang/protobuf/protoc-gen-go
 go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
 go get -u github.com/go-kratos/kratos/cmd/protoc-gen-go-http
@@ -59,7 +69,7 @@ message HelloReply {
 通过protoc命令生成服务代码(http协议)
 `protoc --proto_path=. --proto_path=./third_party
 --go_out=paths=source_relative:. --go-http_out=paths=source_relative:.  *.proto`
-####3.编写service实现层代码
+#### 3.编写service实现层代码
 ```
 import	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 
@@ -73,7 +83,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 	return &pb.HelloReply{Message: fmt.Sprintf("Welcome %+v!", in.Name)}, nil
 }
 ```
-####4.编写server(grpc协议)启动入口main.go
+#### 4.编写server(grpc协议)启动入口main.go
 ```
 import  pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 import 	tsf "github.com/tencentyun/tsf-go"
@@ -111,11 +121,11 @@ func main() {
     }
 }
 ```
-###5.服务启动
+### 5.服务启动
 - 参考[腾讯云文档](https://cloud.tencent.com/document/product/649/16618)搭建并启动一个本地轻量级consul注册中心；如果暂时不想启动服务发现，则可以在第4步骤中将`opts = append(opts, tsf.AppOptions()...)`这行代码删除即可
 - 执行`go run main.go`即可启动server
-##客户端开发（grpc协议）
-###1.编写客户端代码
+## 客户端开发（grpc协议）
+### 1.编写客户端代码
 ```
 import  pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 import  tsf "github.com/tencentyun/tsf-go"
@@ -141,11 +151,14 @@ func main() {
     }
 }
 ```
-####2.启动客户端
+#### 2.启动客户端
 执行`go run main.go`即可启动client
 
 ##部署至腾讯云TSF治理平台
-#### 1. 编写 Dockerfile
+#### 1. 在TSF上创建应用和镜像仓库
+参考文档[TSF应用管理](https://cloud.tencent.com/document/product/649/56145)创建应用并开通镜像仓库
+
+#### 2. 编写 Dockerfile
 ```
 FROM centos:7
 
@@ -169,13 +182,16 @@ CMD ["sh", "-ec", "exec ${workdir}provider ${JAVA_OPTS}"]
 ```
 您需要将上述的 provider 替换为实际的可执行二进制文件名。
 
-#### 2. 打包镜像
+#### 3. 打包镜像
 将 `GOOS=linux go build` 编译出的二进制文件放在 Dockfile 同一目录下：
 `docker build . -t ccr.ccs.tencentyun.com/tsf_xxx/provider:1.0`
-
-#### 3. 推送镜像
-参考[腾讯云TSF官方文档](https://cloud.tencent.com/document/product/649/16695)先开通镜像仓库并推送至仓库
+注意：镜像地址改成应用上传镜像页面中实际的地址
+#### 4. 推送镜像
 `docker push ccr.ccs.tencentyun.com/tsf_xxx/provider:1.0`
+注意：镜像地址改成应用上传镜像页面中实际的地址
+#### 4. 部署应用
+参考文档[TSF部署组](https://cloud.tencent.com/document/product/649/15525)
 
-#### 4. 在 TSF 上部署镜像
-参考[腾讯云TSF官方文档](https://cloud.tencent.com/document/product/649/56145)
+# 更多文档和Examples
+- [文档](/docs/)
+- [Examples](/examples/)
