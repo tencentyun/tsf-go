@@ -51,7 +51,7 @@ func newService(c *consul.Consul) {
 	)
 
 	opts := []kratos.Option{kratos.Name("consumer-http"), kratos.Server(httpSrv)}
-	opts = append(opts, tsf.DefaultOptions()...)
+	opts = append(opts, tsf.AppOptions()...)
 	app := kratos.New(opts...)
 
 	if err := app.Run(); err != nil {

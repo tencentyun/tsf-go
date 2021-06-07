@@ -152,7 +152,7 @@ func ClientHTTPOptions(m ...middleware.Middleware) []http.ClientOption {
 	return opts
 }
 
-func DefaultOptions() []kratos.Option {
+func AppOptions() []kratos.Option {
 	return []kratos.Option{
 		ID(), Registrar(), Metadata(),
 	}

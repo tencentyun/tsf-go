@@ -42,7 +42,7 @@ func main() {
 	pb.RegisterGreeterServer(grpcSrv, s)
 
 	opts := []kratos.Option{kratos.Name("provider-grpc"), kratos.Server(grpcSrv)}
-	opts = append(opts, tsf.DefaultOptions()...)
+	opts = append(opts, tsf.AppOptions()...)
 	app := kratos.New(opts...)
 
 	if err := app.Run(); err != nil {

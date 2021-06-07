@@ -29,7 +29,8 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 func newService(c *consul.Consul) {
 	logger := log.DefaultLogger
 	log := log.NewHelper(logger)
-
+	// 指定被调方服务连接地址:<scheme>://<authority>/<service_name>
+	// 如果使用服务发现，此处scheme固定为discovery，authority留空
 	clientOpts := []grpc.ClientOption{grpc.WithEndpoint("discovery:///provider-grpc")}
 	clientOpts = append(clientOpts, tsf.ClientGrpcOptions()...)
 	conn, err := grpc.DialInsecure(context.Background(), clientOpts...)
@@ -53,7 +54,7 @@ func newService(c *consul.Consul) {
 	pb.RegisterGreeterServer(grpcSrv, s)
 
 	opts := []kratos.Option{kratos.Name("consumer-grpc"), kratos.Server(grpcSrv)}
-	opts = append(opts, tsf.DefaultOptions()...)
+	opts = append(opts, tsf.AppOptions()...)
 	app := kratos.New(opts...)
 
 	if err := app.Run(); err != nil {

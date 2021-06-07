@@ -34,7 +34,7 @@ func main() {
 	httpSrv.HandlePrefix("/", router)
 
 	opts := []kratos.Option{kratos.Name("provider-http"), kratos.Server(httpSrv)}
-	opts = append(opts, tsf.DefaultOptions()...)
+	opts = append(opts, tsf.AppOptions()...)
 	app := kratos.New(opts...)
 
 	if err := app.Run(); err != nil {
