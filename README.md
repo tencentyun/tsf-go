@@ -19,8 +19,8 @@ tsf go 为用户现存的 Go 应用提供了接入TSF治理平台的 SDK 插件
 go get -u github.com/golang/protobuf/protoc-gen-go
 go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
 go get -u github.com/go-kratos/kratos/cmd/protoc-gen-go-http
-##服务端开发
-####1.通过protobuf定义服务接口
+## 服务端开发
+#### 1.通过protobuf定义服务接口
 ```
 syntax = "proto3";
 
@@ -36,12 +36,7 @@ option go_package = "github.com/tencentyun/tsf-go/examples/helloworld/proto";
 // 定义服务名service_name
 service Greeter {
   // 方法接口名,rpc_method
-  rpc SayHello (HelloRequest) returns (HelloReply)  {       
-        // 定义http restful接口规则，非必须
-        // 如果不定义，生成http接口会按照POST: /<package_name.service_name>/<rpc_method> 规范生成 
-        option (google.api.http) = {
-            get: "/helloworld/{name}",
-        };
+  rpc SayHello (HelloRequest) returns (HelloReply)  {    
   }
 }
 
@@ -61,14 +56,12 @@ message HelloReply {
 - syntax必须是proto3，tsf go都是基于proto3通信的。
 - package后面必须有option go_package="github.com/tencentyun/tsf-go/examples/helloworld/proto";指明你的pb.go生成文件的git存放地址，协议与服务分离，方便其他人直接引用
 - 编写protobuf时必须遵循[谷歌官方规范](https://developers.google.com/protocol-buffers/docs/style)。
-- 通过protobuf编写http restful接口时请参考[gogleapis规范](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto#L46) 和完整的[examples](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/examples/internal/proto/examplepb/a_bit_of_everything.proto)。
-####2.生成服务端桩代码xxx.pb.go代码
+
+#### 2.生成服务端桩代码xxx.pb.go代码
 通过protoc命令生成服务代码(grpc协议)
 `protoc --proto_path=. --proto_path=./third_party
 --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. *.proto`
-通过protoc命令生成服务代码(http协议)
-`protoc --proto_path=. --proto_path=./third_party
---go_out=paths=source_relative:. --go-http_out=paths=source_relative:.  *.proto`
+
 #### 3.编写service实现层代码
 ```
 import	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
