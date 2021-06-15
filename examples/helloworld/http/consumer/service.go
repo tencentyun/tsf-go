@@ -41,14 +41,15 @@ func newService(c *consul.Consul) {
 		httpClient: pb.NewGreeterHTTPClient(httpConn),
 	}
 
-	httpSrv := http.NewServer(http.Address("0.0.0.0:8080"))
-	httpSrv.HandlePrefix("/", pb.NewGreeterHandler(s,
+	httpSrv := http.NewServer(
+		http.Address("0.0.0.0:8080"),
 		http.Middleware(
 			recovery.Recovery(),
 			logging.Server(logger),
 			tsf.ServerMiddleware(),
-		)),
+		),
 	)
+	pb.RegisterGreeterHTTPServer(httpSrv, s)
 
 	opts := []kratos.Option{kratos.Name("consumer-http"), kratos.Server(httpSrv)}
 	opts = append(opts, tsf.AppOptions()...)

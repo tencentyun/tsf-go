@@ -9,9 +9,9 @@ import (
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/go-kratos/kratos/v2/metadata"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/openzipkin/zipkin-go"
 	"github.com/openzipkin/zipkin-go/model"
@@ -22,7 +22,7 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/route/lane"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
-	"google.golang.org/grpc/metadata"
+	gmetadata "google.golang.org/grpc/metadata"
 )
 
 func getClientStat(ctx context.Context, remoteServiceName string, method string) *monitor.Stat {
@@ -58,37 +58,25 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 	}
 	ctx = meta.WithSys(ctx, pairs...)
 
-	gmd := metadata.MD{}
+	md := metadata.Metadata{}
 	meta.RangeUser(ctx, func(key string, value string) {
-		gmd[meta.UserKey(key)] = []string{value}
+		md.Set(meta.UserKey(key), value)
 	})
 	meta.RangeSys(ctx, func(key string, value interface{}) {
 		if meta.IsOutgoing(key) {
 			if str, ok := value.(string); ok {
-				gmd[key] = []string{str}
+				md.Set(key, str)
 			} else if fmtStr, ok := value.(fmt.Stringer); ok {
-				gmd[key] = []string{fmtStr.String()}
+				md.Set(key, fmtStr.String())
 			}
 		}
 	})
-	gmd[meta.GroupID] = []string{env.GroupID()}
-	gmd[meta.ServiceNamespace] = []string{env.NamespaceID()}
-	gmd[meta.ApplicationID] = []string{env.ApplicationID()}
-	gmd[meta.ApplicationVersion] = []string{env.ProgVersion()}
-	// merge with old matadata if exists
-	if info, ok := http.FromClientContext(ctx); ok {
-		for k, values := range gmd {
-			for _, v := range values {
-				info.Request.Header.Add(k, v)
-			}
-		}
-	} else if oldmd, ok := metadata.FromOutgoingContext(ctx); ok {
-		gmd = metadata.Join(gmd, oldmd)
-	}
-	if _, ok := grpc.FromClientContext(ctx); ok {
-		ctx = metadata.NewOutgoingContext(ctx, gmd)
-	}
-	return ctx
+	md.Set(meta.GroupID, env.GroupID())
+	md.Set(meta.ServiceNamespace, env.NamespaceID())
+	md.Set(meta.ApplicationID, env.ApplicationID())
+	md.Set(meta.ApplicationVersion, env.ProgVersion())
+
+	return metadata.MergeToClientContext(ctx, md)
 }
 
 func parseTarget(endpoint string) (string, error) {
@@ -114,21 +102,20 @@ func ClientMiddleware() middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
 			once.Do(func() {
-				tr, _ := transport.FromContext(ctx)
-				remoteServiceName, _ = parseTarget(tr.Endpoint)
+				tr, _ := transport.FromClientContext(ctx)
+				remoteServiceName, _ = parseTarget(tr.Endpoint())
 			})
 			var api string
-			var method string
-			if info, ok := grpc.FromClientContext(ctx); ok {
-				api = info.FullMethod
-			} else if info, ok := http.FromClientContext(ctx); ok {
-				method = info.Request.Method
-				if info.PathPattern != "" {
-					api = info.PathPattern
-				} else {
-					api = info.Request.URL.RawPath
+			var method string = "POST"
+			if tr, ok := transport.FromClientContext(ctx); ok {
+				api = tr.Operation()
+				if tr.Kind() == transport.KindHTTP {
+					if ht, ok := tr.(*http.Transport); ok {
+						method = ht.Request().Method
+					}
 				}
 			}
+
 			ctx = startClientContext(ctx, remoteServiceName, lane, api)
 			ctx = startClientSpan(ctx, method, api)
 			stat := getClientStat(ctx, remoteServiceName, api)
@@ -177,11 +164,20 @@ func startClientSpan(ctx context.Context, method string, api string) context.Con
 	span.Tag("http.method", method)
 	span.Tag("localInterface", api)
 	span.Tag("http.path", api)
-	if info, ok := http.FromClientContext(ctx); ok {
-		b3.InjectHTTP(info.Request)(span.Context())
-	} else if gmd, ok := metadata.FromOutgoingContext(ctx); ok {
-		b3.InjectGRPC(&gmd)(span.Context())
-		ctx = metadata.NewOutgoingContext(ctx, gmd)
+
+	if tr, ok := transport.FromClientContext(ctx); ok {
+		if tr.Kind() == transport.KindHTTP {
+			if ht, ok := tr.(*http.Transport); ok {
+				b3.InjectHTTP(ht.Request())(span.Context())
+			}
+		} else if tr.Kind() == transport.KindGRPC {
+			var gmd gmetadata.MD
+			if gmd, ok = gmetadata.FromOutgoingContext(ctx); !ok {
+				gmd = gmetadata.New(nil)
+				ctx = gmetadata.NewOutgoingContext(ctx, gmd)
+			}
+			b3.InjectGRPC(&gmd)(span.Context())
+		}
 	}
 	return ctx
 }

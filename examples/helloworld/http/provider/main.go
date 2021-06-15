@@ -31,14 +31,15 @@ func main() {
 	log := log.NewHelper(logger)
 
 	s := &server{}
-	httpSrv := http.NewServer(http.Address(":8000"))
-	httpSrv.HandlePrefix("/", pb.NewGreeterHandler(s,
+	httpSrv := http.NewServer(
+		http.Address("0.0.0.0:8000"),
 		http.Middleware(
 			recovery.Recovery(),
 			logging.Server(logger),
 			tsf.ServerMiddleware(),
-		)),
+		),
 	)
+	pb.RegisterGreeterHTTPServer(httpSrv, s)
 
 	opts := []kratos.Option{kratos.Name("provider-http"), kratos.Server(httpSrv)}
 	opts = append(opts, tsf.AppOptions()...)
