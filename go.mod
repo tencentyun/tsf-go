@@ -6,7 +6,7 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/fullstorydev/grpcurl v1.8.1
 	github.com/gin-gonic/gin v1.7.2
-	github.com/go-kratos/kratos/v2 v2.0.0-rc3
+	github.com/go-kratos/kratos/v2 v2.0.0-rc4
 	github.com/go-kratos/swagger-api v0.1.2
 	github.com/go-playground/validator/v10 v10.6.1 // indirect
 	github.com/gogo/protobuf v1.3.2
@@ -32,7 +32,6 @@ require (
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
-	golang.org/x/sys v0.0.0-20210611083646-a4fc73990273 // indirect
 	google.golang.org/genproto v0.0.0-20210611144927-798beca9d670
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
@@ -40,8 +39,4 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	nhooyr.io/websocket v1.8.7 // indirect
-)
-replace(
-	github.com/go-kratos/kratos/v2 v2.0.0-rc3  =>	github.com/go-kratos/kratos/v2 v2.0.0-20210617025033-25c8e2bd3b12
-
 )
