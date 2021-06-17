@@ -40,3 +40,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	nhooyr.io/websocket v1.8.7 // indirect
 )
+
+replace github.com/go-kratos/kratos/v2 v2.0.0-rc4 => github.com/go-kratos/kratos/v2 v2.0.0-20210617095723-7b41acf2416a

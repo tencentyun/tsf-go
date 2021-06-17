@@ -137,6 +137,8 @@ func (l *tsfLogger) Log(level log.Level, keyvals ...interface{}) error {
 		l.logger.Warn(buf.String())
 	} else if level == log.LevelError {
 		l.logger.Error(buf.String())
+	} else if level == log.LevelFatal {
+		l.logger.Fatal(buf.String())
 	}
 
 	buf.Reset()

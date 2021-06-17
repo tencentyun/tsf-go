@@ -47,7 +47,7 @@ message HelloReply {
 通过protoc命令生成服务代码(http协议)
 `protoc --proto_path=. --proto_path=./third_party
 --go_out=paths=source_relative:. --go-http_out=paths=source_relative:.  *.proto`
-
+如果没有定义google.api.http，但仍想生成xxx_http.pb.go代码，则生成时需要加上参数--go-http_opt=omitempty=false
 #### 3.编写service实现层代码
 ```
 import	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
@@ -72,22 +72,23 @@ import  "github.com/go-kratos/kratos/v2/transport/grpc"
 func main() {
   flag.Parse()
 
-	s := &server{}
-	httpSrv := http.NewServer(http.Address(":8000"))
-	httpSrv.HandlePrefix("/", pb.NewGreeterHandler(s,
-		http.Middleware(
-			recovery.Recovery(),
-			tsf.ServerMiddleware(),
-		)),
-	)
+  s := &server{}
+  httpSrv := http.NewServer(
+    http.Address(":8000"),
+    http.Middleware(
+    recovery.Recovery(),
+    tsf.ServerMiddleware(),
+    ),
+  )
+  pb.RegisterGreeterHTTPServer(httpSrv, s)
 
-	opts := []kratos.Option{kratos.Name("provider-http"), kratos.Server(httpSrv)}
-	opts = append(opts, tsf.AppOptions()...)
-	app := kratos.New(opts...)
+  opts := []kratos.Option{kratos.Name("provider-http"), kratos.Server(httpSrv)}
+  opts = append(opts, tsf.AppOptions()...)
+  app := kratos.New(opts...)
 
-	if err := app.Run(); err != nil {
-	    panic(err) 
-	}
+  if err := app.Run(); err != nil {
+    panic(err) 
+  }
 }
 ```
 ### 5.服务启动

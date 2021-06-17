@@ -117,6 +117,7 @@ func clientMiddleware() middleware.Middleware {
 				api = tr.Operation()
 				if tr.Kind() == transport.KindHTTP {
 					if ht, ok := tr.(*http.Transport); ok {
+						api = ht.PathTemplate()
 						method = ht.Request().Method
 					}
 				}
@@ -167,8 +168,9 @@ func startClientSpan(ctx context.Context, method string, api string) context.Con
 	span := tracer.StartSpan(api, options...)
 	ctx = zipkin.NewContext(ctx, span)
 
+	localAPI, _ := meta.Sys(ctx, meta.Interface).(string)
 	span.Tag("http.method", method)
-	span.Tag("localInterface", api)
+	span.Tag("localInterface", localAPI)
 	span.Tag("http.path", api)
 
 	if tr, ok := transport.FromClientContext(ctx); ok {

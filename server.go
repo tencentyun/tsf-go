@@ -28,7 +28,6 @@ import (
 	mmeta "github.com/go-kratos/kratos/v2/middleware/metadata"
 	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/gorilla/mux"
 	"github.com/openzipkin/zipkin-go"
 	"github.com/openzipkin/zipkin-go/model"
 	"github.com/openzipkin/zipkin-go/propagation/b3"
@@ -37,9 +36,9 @@ import (
 )
 
 func spanName(api string) string {
-	name := strings.TrimPrefix(api, "/")
-	name = strings.Replace(name, "/", ".", -1)
-	return name
+	//name := strings.TrimPrefix(api, "/")
+	//name = strings.Replace(name, "/", ".", -1)
+	return api
 }
 
 func startServerContext(ctx context.Context, serviceName string, api string, tracer *zipkin.Tracer) context.Context {
@@ -189,12 +188,8 @@ func serverMiddleware() middleware.Middleware {
 				api = tr.Operation()
 				if tr.Kind() == transport.KindHTTP {
 					if ht, ok := tr.(*http.Transport); ok {
-						req := ht.Request().WithContext(ctx)
-						if route := mux.CurrentRoute(req); route != nil {
-							// /path/123 -> /path/{id}
-							api, _ = route.GetPathTemplate()
-						}
-						method = req.Method
+						api = ht.PathTemplate()
+						method = ht.Request().Method
 					}
 				}
 			} else if c, ok := gin.FromGinContext(ctx); ok {

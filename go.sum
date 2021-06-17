@@ -139,10 +139,10 @@ github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-ini/ini v1.25.4/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3Ies8=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
+github.com/go-kratos/kratos/v2 v2.0.0-20210617095723-7b41acf2416a h1:RLn4kw/U+DbjaP0YjmcSg5LAGxNFPkJuwxW0DwRiq1U=
+github.com/go-kratos/kratos/v2 v2.0.0-20210617095723-7b41acf2416a/go.mod h1:b3YbddNSpAUPbO84XkMTt2llIuDReEzjJGOkuCo5hgI=
 github.com/go-kratos/kratos/v2 v2.0.0-rc3 h1:sxMo9AgMBwNw0rs3DlihtefxYymSEA5bXFFSg96tmVA=
 github.com/go-kratos/kratos/v2 v2.0.0-rc3/go.mod h1:b3YbddNSpAUPbO84XkMTt2llIuDReEzjJGOkuCo5hgI=
-github.com/go-kratos/kratos/v2 v2.0.0-rc4 h1:JGsHMK4IvOnEU3EyTlnilwkd/WACw/CVzHLl7CS+NKU=
-github.com/go-kratos/kratos/v2 v2.0.0-rc4/go.mod h1:b3YbddNSpAUPbO84XkMTt2llIuDReEzjJGOkuCo5hgI=
 github.com/go-kratos/swagger-api v0.1.2 h1:d9OHnzYZOobNm86IrfBuhJdcWY3Oa2jqRPDeriFhnyQ=
 github.com/go-kratos/swagger-api v0.1.2/go.mod h1:Xjntb23zrW3scKRzsyx/OmO7FiBQzjevXtqsQ4XvyaA=
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
