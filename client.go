@@ -7,21 +7,23 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/metadata"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/transport"
-	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/openzipkin/zipkin-go"
-	"github.com/openzipkin/zipkin-go/model"
-	"github.com/openzipkin/zipkin-go/propagation/b3"
 	"github.com/tencentyun/tsf-go/pkg/grpc/balancer/multi"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/pkg/route/composite"
 	"github.com/tencentyun/tsf-go/pkg/route/lane"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
+
+	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/go-kratos/kratos/v2/metadata"
+	"github.com/go-kratos/kratos/v2/middleware"
+	mmeta "github.com/go-kratos/kratos/v2/middleware/metadata"
+	"github.com/go-kratos/kratos/v2/transport"
+	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/openzipkin/zipkin-go"
+	"github.com/openzipkin/zipkin-go/model"
+	"github.com/openzipkin/zipkin-go/propagation/b3"
 	gmetadata "google.golang.org/grpc/metadata"
 )
 
@@ -75,7 +77,6 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 	md.Set(meta.ServiceNamespace, env.NamespaceID())
 	md.Set(meta.ApplicationID, env.ApplicationID())
 	md.Set(meta.ApplicationVersion, env.ProgVersion())
-
 	return metadata.MergeToClientContext(ctx, md)
 }
 
@@ -93,7 +94,12 @@ func parseTarget(endpoint string) (string, error) {
 	return service, nil
 }
 
+// ClientMiddleware is client middleware
 func ClientMiddleware() middleware.Middleware {
+	return middleware.Chain(clientMiddleware(), mmeta.Client())
+}
+
+func clientMiddleware() middleware.Middleware {
 	router := composite.DefaultComposite()
 	multi.Register(router)
 	lane := router.Lane()

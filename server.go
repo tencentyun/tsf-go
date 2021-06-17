@@ -25,6 +25,7 @@ import (
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/metadata"
 	"github.com/go-kratos/kratos/v2/middleware"
+	mmeta "github.com/go-kratos/kratos/v2/middleware/metadata"
 	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/gorilla/mux"
@@ -50,7 +51,6 @@ func startServerContext(ctx context.Context, serviceName string, api string, tra
 		remote    string
 	)
 	md, _ := metadata.FromServerContext(ctx)
-
 	if tr, ok := transport.FromServerContext(ctx); ok {
 		if tr.Kind() == transport.KindHTTP {
 			if ht, ok := tr.(*http.Transport); ok {
@@ -149,6 +149,11 @@ func getStat(serviceName string, method string) *monitor.Stat {
 
 // ServerMiddleware is a grpc server middleware.
 func ServerMiddleware() middleware.Middleware {
+	return middleware.Chain(mmeta.Server(mmeta.WithPropagatedPrefix("")), serverMiddleware())
+}
+
+// ServerMiddleware is a grpc server middleware.
+func serverMiddleware() middleware.Middleware {
 	var (
 		tracer      *zipkin.Tracer
 		authen      auth.Auth

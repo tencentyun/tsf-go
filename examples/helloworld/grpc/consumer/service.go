@@ -47,8 +47,8 @@ func newService(c *consul.Consul) {
 		grpc.Address("0.0.0.0:9090"),
 		grpc.Middleware(
 			recovery.Recovery(),
-			logging.Server(logger),
 			tsf.ServerMiddleware(),
+			logging.Server(logger),
 		),
 	)
 	pb.RegisterGreeterServer(grpcSrv, s)

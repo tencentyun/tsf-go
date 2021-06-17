@@ -33,12 +33,12 @@ func callHTTP() {
 		transhttp.WithEndpoint("127.0.0.1:8080"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	client := pb.NewGreeterHTTPClient(conn)
 	reply, err := client.SayHello(context.Background(), &pb.HelloRequest{Name: "kratos_http"})
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	log.Printf("[http] SayHello %s\n", reply.Message)
 }

@@ -35,8 +35,8 @@ func main() {
 		http.Address("0.0.0.0:8000"),
 		http.Middleware(
 			recovery.Recovery(),
-			logging.Server(logger),
 			tsf.ServerMiddleware(),
+			logging.Server(logger),
 		),
 	)
 	pb.RegisterGreeterHTTPServer(httpSrv, s)

@@ -34,8 +34,8 @@ func main() {
 		grpc.Address(":9000"),
 		grpc.Middleware(
 			recovery.Recovery(),
-			logging.Server(logger),
 			tsf.ServerMiddleware(),
+			logging.Server(logger),
 		),
 	)
 	s := &server{}
@@ -44,7 +44,6 @@ func main() {
 	opts := []kratos.Option{kratos.Name("provider-grpc"), kratos.Server(grpcSrv)}
 	opts = append(opts, tsf.AppOptions()...)
 	app := kratos.New(opts...)
-
 	if err := app.Run(); err != nil {
 		log.Errorf("app run failed:%v", err)
 	}
