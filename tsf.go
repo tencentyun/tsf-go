@@ -1,14 +1,7 @@
 package tsf
 
 import (
-	"bytes"
-	"compress/gzip"
-	"context"
-	"encoding/base64"
-	"time"
-
 	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/api/metadata"
 	"github.com/go-kratos/kratos/v2/middleware"
 	tgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
@@ -23,16 +16,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-// ServerOption is HTTP server option.
-type ServerOption func(*serverOptions)
+// Option is HTTP server option.
+type Option func(*serverOptions)
 
-func ProtoServiceName(fullname string) ServerOption {
+func ProtoServiceName(fullname string) Option {
 	return func(s *serverOptions) {
 		s.protoService = fullname
 	}
 }
 
-func GRPCServer(srv *grpc.Server) ServerOption {
+func GRPCServer(srv *grpc.Server) Option {
 	return func(s *serverOptions) {
 		s.srv = srv
 	}
@@ -44,13 +37,13 @@ type serverOptions struct {
 	apiMeta      bool
 }
 
-func APIMeta(enable bool) ServerOption {
+func APIMeta(enable bool) Option {
 	return func(s *serverOptions) {
 		s.apiMeta = enable
 	}
 }
 
-func Metadata(optFuncs ...ServerOption) (opt kratos.Option) {
+func Metadata(optFuncs ...Option) (opt kratos.Option) {
 	enableApiMeta := true
 	if env.Token() == "" {
 		enableApiMeta = false
@@ -75,51 +68,18 @@ func Metadata(optFuncs ...ServerOption) (opt kratos.Option) {
 		"TSF_SDK_VERSION":    version.GetHumanVersion(),
 	}
 	if enableApiMeta {
-		var apiSrv *openapiv2.Service
-		if opts.srv != nil {
-			apiSrv = openapiv2.New(opts.srv)
-		} else {
-			apiSrv = openapiv2.New(opts.srv)
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
-		defer cancel()
-		var apiMeta string
-		if opts.protoService != "" {
-			apiMeta, _ = apiSrv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: opts.protoService})
-
-		} else {
-			reply, err := apiSrv.ListServices(ctx, &metadata.ListServicesRequest{})
-			if err == nil {
-				for _, service := range reply.Services {
-					if service != "grpc.health.v1.Health" && service != "grpc.reflection.v1alpha.ServerReflection" && service != "kratos.api.Metadata" {
-						apiMeta, _ = apiSrv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: service})
-						break
-					}
-				}
-			}
-		}
-		if apiMeta != "" {
-			var buf bytes.Buffer
-			zw := gzip.NewWriter(&buf)
-			_, err := zw.Write([]byte(apiMeta))
-			if err == nil {
-				err = zw.Close()
-				if err == nil {
-					res := base64.StdEncoding.EncodeToString(buf.Bytes())
-					md["TSF_API_METAS"] = res
-				}
-			}
-		}
+		apiSrv := openapiv2.New(opts.srv)
+		genAPIMeta(md, apiSrv, opts.protoService)
 	}
 
 	opt = kratos.Metadata(md)
 	return
 }
 
-func ID() kratos.Option {
+func ID(optFuncs ...Option) kratos.Option {
 	return kratos.ID(env.InstanceId())
 }
-func Registrar() kratos.Option {
+func Registrar(optFuncs ...Option) kratos.Option {
 	return kratos.Registrar(consul.DefaultConsul())
 }
 
@@ -152,8 +112,8 @@ func ClientHTTPOptions(m ...middleware.Middleware) []http.ClientOption {
 	return opts
 }
 
-func AppOptions() []kratos.Option {
+func AppOptions(optFuncs ...Option) []kratos.Option {
 	return []kratos.Option{
-		ID(), Registrar(), Metadata(),
+		ID(optFuncs...), Registrar(optFuncs...), Metadata(optFuncs...),
 	}
 }

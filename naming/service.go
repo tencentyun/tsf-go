@@ -101,6 +101,15 @@ func FromKratosInstance(ki *registry.ServiceInstance) (inss []*Instance) {
 			ins.Metadata[k] = v
 		}
 		ins.Metadata["protocol"] = scheme
+		if scheme == "grpc" {
+			if ins.Metadata["TSF_API_METAS_GRPC"] != "" {
+				ins.Metadata["TSF_API_METAS"] = ins.Metadata["TSF_API_METAS_GRPC"]
+			}
+		} else if ins.Metadata["TSF_API_METAS_HTTP"] != "" {
+			ins.Metadata["TSF_API_METAS"] = ins.Metadata["TSF_API_METAS_HTTP"]
+		}
+		delete(ins.Metadata, "TSF_API_METAS_GRPC")
+		delete(ins.Metadata, "TSF_API_METAS_HTTP")
 		json.Unmarshal([]byte(ki.Metadata["tsf_tags"]), &ins.Tags)
 		inss = append(inss, ins)
 	}

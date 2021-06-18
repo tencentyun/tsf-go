@@ -7,7 +7,7 @@ require (
 	github.com/fullstorydev/grpcurl v1.8.1
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-kratos/kratos/v2 v2.0.0-rc5
-	github.com/go-kratos/swagger-api v0.1.2
+	github.com/go-kratos/swagger-api v0.1.4
 	github.com/go-playground/validator/v10 v10.6.1 // indirect
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/gops v0.3.18
@@ -31,7 +31,6 @@ require (
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
-	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
 	google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
