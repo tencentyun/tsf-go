@@ -41,7 +41,7 @@ func spanName(api string) string {
 	return api
 }
 
-func startServerContext(ctx context.Context, serviceName string, api string, tracer *zipkin.Tracer) context.Context {
+func startServerContext(ctx context.Context, serviceName string, method string, operation string, tracer *zipkin.Tracer) context.Context {
 	// add system metadata into ctx
 	var (
 		sysPairs  []meta.SysPair
@@ -117,19 +117,19 @@ func startServerContext(ctx context.Context, serviceName string, api string, tra
 	if pr, ok := peer.FromContext(ctx); ok {
 		sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ConnnectionIP), Value: util.IPFromAddr(pr.Addr)})
 	}
-
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ServiceName, Value: serviceName})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.Namespace, Value: env.NamespaceID()})
-	sysPairs = append(sysPairs, meta.SysPair{Key: meta.Interface, Value: api})
+	sysPairs = append(sysPairs, meta.SysPair{Key: meta.Interface, Value: operation})
+	sysPairs = append(sysPairs, meta.SysPair{Key: meta.RequestHTTPMethod, Value: method})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.Tracer, Value: tracer})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.GroupID, Value: env.GroupID()})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ApplicationID, Value: env.ApplicationID()})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ApplicationVersion, Value: env.ProgVersion()})
-	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ConnnectionIP, Value: env.LocalIP()})
+	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ConnnectionIP, Value: tracer.LocalEndpoint().IPv4.String()})
 	ctx = meta.WithSys(ctx, sysPairs...)
 	ctx = meta.WithUser(ctx, userPairs...)
 
-	name := spanName(api)
+	name := spanName(operation)
 	span := tracer.StartSpan(name, zipkin.Kind(model.Server), zipkin.Parent(sc), zipkin.RemoteEndpoint(remoteEndpointFromContext(ctx, remote)))
 	ctx = zipkin.NewContext(ctx, span)
 	return ctx
@@ -182,27 +182,31 @@ func serverMiddleware() middleware.Middleware {
 					panic(err)
 				}
 			})
-			var api string
+			var operation string
+			var path string
 			var method string = "POST"
 			if tr, ok := transport.FromServerContext(ctx); ok {
-				api = tr.Operation()
+				operation = tr.Operation()
+				path = operation
 				if tr.Kind() == transport.KindHTTP {
 					if ht, ok := tr.(*http.Transport); ok {
-						api = ht.PathTemplate()
+						operation = ht.PathTemplate()
 						method = ht.Request().Method
+						path = ht.Request().URL.Path
 					}
 				}
 			} else if c, ok := gin.FromGinContext(ctx); ok {
-				api = c.Ctx.FullPath()
+				operation = c.Ctx.FullPath()
 				method = c.Ctx.Request.Method
+				path = c.Ctx.Request.URL.Path
 			}
 
-			ctx = startServerContext(ctx, serviceName, api, tracer)
-			stat := getStat(serviceName, api)
+			ctx = startServerContext(ctx, serviceName, method, operation, tracer)
+			stat := getStat(serviceName, operation)
 			span := zipkin.SpanFromContext(ctx)
 			span.Tag("http.method", method)
-			span.Tag("localInterface", api)
-			span.Tag("http.path", api)
+			span.Tag("localInterface", operation)
+			span.Tag("http.path", path)
 			defer func() {
 				var code = 200
 				if err != nil {
@@ -219,7 +223,7 @@ func serverMiddleware() middleware.Middleware {
 			}()
 
 			// 鉴权
-			err = authen.Verify(ctx, api)
+			err = authen.Verify(ctx, operation)
 			if err != nil {
 				return
 			}

@@ -27,19 +27,15 @@ import (
 	gmetadata "google.golang.org/grpc/metadata"
 )
 
-func getClientStat(ctx context.Context, remoteServiceName string, method string) *monitor.Stat {
-	localService, ok := meta.Sys(ctx, meta.ServiceName).(string)
-	if !ok {
-		localService = env.ServiceName()
-	}
-	localMethod, ok := meta.Sys(ctx, meta.Interface).(string)
-	if !ok {
-		localMethod = "/defaultInterface"
-	}
-	return monitor.NewStat(monitor.CategoryMS, monitor.KindClient, &monitor.Endpoint{ServiceName: localService, InterfaceName: localMethod, Path: localMethod, Method: "POST"}, &monitor.Endpoint{ServiceName: remoteServiceName, InterfaceName: method})
+func getClientStat(ctx context.Context, remoteServiceName string, operation string, method string) *monitor.Stat {
+	localService, _ := meta.Sys(ctx, meta.ServiceName).(string)
+	localOperation, _ := meta.Sys(ctx, meta.Interface).(string)
+	localMethod, _ := meta.Sys(ctx, meta.RequestHTTPMethod).(string)
+
+	return monitor.NewStat(monitor.CategoryMS, monitor.KindClient, &monitor.Endpoint{ServiceName: localService, InterfaceName: localOperation, Path: localOperation, Method: localMethod}, &monitor.Endpoint{ServiceName: remoteServiceName, InterfaceName: operation, Path: operation, Method: method})
 }
 
-func startClientContext(ctx context.Context, remoteServiceName string, l *lane.Lane, api string) context.Context {
+func startClientContext(ctx context.Context, remoteServiceName string, l *lane.Lane, operation string) context.Context {
 	// 注入远端服务名
 	pairs := []meta.SysPair{
 		{Key: meta.DestKey(meta.ServiceName), Value: remoteServiceName},
@@ -54,7 +50,7 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 		serviceName = res.(string)
 	}
 
-	pairs = append(pairs, meta.SysPair{Key: meta.DestKey(meta.Interface), Value: api})
+	pairs = append(pairs, meta.SysPair{Key: meta.DestKey(meta.Interface), Value: operation})
 	if laneID := l.GetLaneID(ctx); laneID != "" {
 		pairs = append(pairs, meta.SysPair{Key: meta.LaneID, Value: laneID})
 	}
@@ -111,21 +107,24 @@ func clientMiddleware() middleware.Middleware {
 				tr, _ := transport.FromClientContext(ctx)
 				remoteServiceName, _ = parseTarget(tr.Endpoint())
 			})
-			var api string
+			var operation string
+			var path string
 			var method string = "POST"
 			if tr, ok := transport.FromClientContext(ctx); ok {
-				api = tr.Operation()
+				operation = tr.Operation()
+				path = operation
 				if tr.Kind() == transport.KindHTTP {
 					if ht, ok := tr.(*http.Transport); ok {
-						api = ht.PathTemplate()
+						operation = ht.PathTemplate()
 						method = ht.Request().Method
+						path = ht.Request().URL.Path
 					}
 				}
 			}
 
-			ctx = startClientContext(ctx, remoteServiceName, lane, api)
-			ctx = startClientSpan(ctx, method, api)
-			stat := getClientStat(ctx, remoteServiceName, api)
+			ctx = startClientContext(ctx, remoteServiceName, lane, operation)
+			ctx = startClientSpan(ctx, method, operation, path)
+			stat := getClientStat(ctx, remoteServiceName, operation, method)
 			defer func() {
 				var code = 200
 				if err != nil {
@@ -147,7 +146,7 @@ func clientMiddleware() middleware.Middleware {
 	}
 }
 
-func startClientSpan(ctx context.Context, method string, api string) context.Context {
+func startClientSpan(ctx context.Context, method string, operation string, path string) context.Context {
 	tracer, _ := meta.Sys(ctx, meta.Tracer).(*zipkin.Tracer)
 	if tracer == nil {
 		tracer, _ = ctx.Value(meta.Tracer).(*zipkin.Tracer)
@@ -165,13 +164,13 @@ func startClientSpan(ctx context.Context, method string, api string) context.Con
 	if parentSpan != nil {
 		options = append(options, zipkin.Parent(parentSpan.Context()))
 	}
-	span := tracer.StartSpan(api, options...)
+	span := tracer.StartSpan(operation, options...)
 	ctx = zipkin.NewContext(ctx, span)
 
 	localAPI, _ := meta.Sys(ctx, meta.Interface).(string)
 	span.Tag("http.method", method)
 	span.Tag("localInterface", localAPI)
-	span.Tag("http.path", api)
+	span.Tag("http.path", path)
 
 	if tr, ok := transport.FromClientContext(ctx); ok {
 		if tr.Kind() == transport.KindHTTP {
