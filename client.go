@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strconv"
 	"sync"
 
 	"github.com/tencentyun/tsf-go/pkg/grpc/balancer/multi"
@@ -13,6 +12,7 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/route/lane"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
+	"github.com/tencentyun/tsf-go/tracing"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/errors"
@@ -21,10 +21,6 @@ import (
 	mmeta "github.com/go-kratos/kratos/v2/middleware/metadata"
 	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/openzipkin/zipkin-go"
-	"github.com/openzipkin/zipkin-go/model"
-	"github.com/openzipkin/zipkin-go/propagation/b3"
-	gmetadata "google.golang.org/grpc/metadata"
 )
 
 func getClientStat(ctx context.Context, remoteServiceName string, operation string, method string) *monitor.Stat {
@@ -43,7 +39,7 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 	}
 	// 注入自己的服务名
 	k, _ := kratos.FromContext(ctx)
-	serviceName := k.Name
+	serviceName := k.Name()
 	if res := meta.Sys(ctx, meta.ServiceName); res == nil {
 		pairs = append(pairs, meta.SysPair{Key: meta.ServiceName, Value: serviceName})
 	} else {
@@ -92,7 +88,7 @@ func parseTarget(endpoint string) (string, error) {
 
 // ClientMiddleware is client middleware
 func ClientMiddleware() middleware.Middleware {
-	return middleware.Chain(clientMiddleware(), mmeta.Client())
+	return middleware.Chain(clientMiddleware(), tracing.Client(), mmeta.Client())
 }
 
 func clientMiddleware() middleware.Middleware {
@@ -108,22 +104,18 @@ func clientMiddleware() middleware.Middleware {
 				remoteServiceName, _ = parseTarget(tr.Endpoint())
 			})
 			var operation string
-			var path string
 			var method string = "POST"
 			if tr, ok := transport.FromClientContext(ctx); ok {
 				operation = tr.Operation()
-				path = operation
 				if tr.Kind() == transport.KindHTTP {
 					if ht, ok := tr.(*http.Transport); ok {
 						operation = ht.PathTemplate()
 						method = ht.Request().Method
-						path = ht.Request().URL.Path
 					}
 				}
 			}
 
 			ctx = startClientContext(ctx, remoteServiceName, lane, operation)
-			ctx = startClientSpan(ctx, method, operation, path)
 			stat := getClientStat(ctx, remoteServiceName, operation, method)
 			defer func() {
 				var code = 200
@@ -131,60 +123,9 @@ func clientMiddleware() middleware.Middleware {
 					code = errors.FromError(err).StatusCode()
 				}
 				stat.Record(code)
-				span := zipkin.SpanFromContext(ctx)
-				if span != nil {
-					if err != nil {
-						span.Tag("exception", err.Error())
-					}
-					span.Tag("resultStatus", strconv.FormatInt(int64(code), 10))
-					span.Finish()
-				}
 			}()
 			reply, err = handler(ctx, req)
 			return
 		}
 	}
-}
-
-func startClientSpan(ctx context.Context, method string, operation string, path string) context.Context {
-	tracer, _ := meta.Sys(ctx, meta.Tracer).(*zipkin.Tracer)
-	if tracer == nil {
-		tracer, _ = ctx.Value(meta.Tracer).(*zipkin.Tracer)
-		if tracer == nil {
-			return ctx
-		}
-	}
-
-	parentSpan := zipkin.SpanFromContext(ctx)
-	if parentSpan == nil {
-		parentSpan, _ = ctx.Value("tsf.spankey").(zipkin.Span)
-	}
-
-	options := []zipkin.SpanOption{zipkin.Kind(model.Client)}
-	if parentSpan != nil {
-		options = append(options, zipkin.Parent(parentSpan.Context()))
-	}
-	span := tracer.StartSpan(operation, options...)
-	ctx = zipkin.NewContext(ctx, span)
-
-	localAPI, _ := meta.Sys(ctx, meta.Interface).(string)
-	span.Tag("http.method", method)
-	span.Tag("localInterface", localAPI)
-	span.Tag("http.path", path)
-
-	if tr, ok := transport.FromClientContext(ctx); ok {
-		if tr.Kind() == transport.KindHTTP {
-			if ht, ok := tr.(*http.Transport); ok {
-				b3.InjectHTTP(ht.Request())(span.Context())
-			}
-		} else if tr.Kind() == transport.KindGRPC {
-			var gmd gmetadata.MD
-			if gmd, ok = gmetadata.FromOutgoingContext(ctx); !ok {
-				gmd = gmetadata.New(nil)
-				ctx = gmetadata.NewOutgoingContext(ctx, gmd)
-			}
-			b3.InjectGRPC(&gmd)(span.Context())
-		}
-	}
-	return ctx
 }

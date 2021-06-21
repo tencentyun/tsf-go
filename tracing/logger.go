@@ -1,21 +1,16 @@
-package trace
+package tracing
 
 import (
-	"github.com/tencentyun/tsf-go/pkg/sys/env"
-
 	"github.com/natefinch/lumberjack"
+	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-// DefaultLogger is default trace logger
-var DefaultLogger *zap.Logger
+// defaultLogger is default trace logger
+var defaultLogger *zap.Logger
 
-func init() {
-	DefaultLogger = getLogger()
-}
-
-func getLogger() *zap.Logger {
+func newLogger() *zap.Logger {
 	path := env.TracePath()
 	encoding := zapcore.EncoderConfig{
 		TimeKey:        "",
@@ -43,4 +38,8 @@ func getLogger() *zap.Logger {
 		zapcore.Level(zap.InfoLevel),
 	)
 	return zap.New(core)
+}
+
+func init() {
+	defaultLogger = newLogger()
 }

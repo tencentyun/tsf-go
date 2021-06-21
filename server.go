@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -18,8 +17,8 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
-	"github.com/tencentyun/tsf-go/pkg/sys/trace"
 	"github.com/tencentyun/tsf-go/pkg/util"
+	"github.com/tencentyun/tsf-go/tracing"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/errors"
@@ -30,8 +29,6 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/openzipkin/zipkin-go"
 	"github.com/openzipkin/zipkin-go/model"
-	"github.com/openzipkin/zipkin-go/propagation/b3"
-	gmetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 )
 
@@ -41,31 +38,13 @@ func spanName(api string) string {
 	return api
 }
 
-func startServerContext(ctx context.Context, serviceName string, method string, operation string, tracer *zipkin.Tracer) context.Context {
+func startServerContext(ctx context.Context, serviceName string, method string, operation string, addr string) context.Context {
 	// add system metadata into ctx
 	var (
 		sysPairs  []meta.SysPair
 		userPairs []meta.UserPair
-		sc        model.SpanContext
-		remote    string
 	)
 	md, _ := metadata.FromServerContext(ctx)
-	if tr, ok := transport.FromServerContext(ctx); ok {
-		if tr.Kind() == transport.KindHTTP {
-			if ht, ok := tr.(*http.Transport); ok {
-				sc = tracer.Extract(b3.ExtractHTTP(ht.Request()))
-				remote = ht.Request().RemoteAddr
-			}
-		} else if tr.Kind() == transport.KindGRPC {
-			if gmd, ok := gmetadata.FromIncomingContext(ctx); ok {
-				sc = tracer.Extract(b3.ExtractGRPC(&gmd))
-			}
-			if p, ok := peer.FromContext(ctx); ok {
-				remote = p.Addr.String()
-			}
-		}
-	}
-
 	for key, val := range md {
 		if key == "" || val == "" {
 			continue
@@ -121,17 +100,13 @@ func startServerContext(ctx context.Context, serviceName string, method string, 
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.Namespace, Value: env.NamespaceID()})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.Interface, Value: operation})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.RequestHTTPMethod, Value: method})
-	sysPairs = append(sysPairs, meta.SysPair{Key: meta.Tracer, Value: tracer})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.GroupID, Value: env.GroupID()})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ApplicationID, Value: env.ApplicationID()})
 	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ApplicationVersion, Value: env.ProgVersion()})
-	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ConnnectionIP, Value: tracer.LocalEndpoint().IPv4.String()})
+	sysPairs = append(sysPairs, meta.SysPair{Key: meta.ConnnectionIP, Value: addr})
 	ctx = meta.WithSys(ctx, sysPairs...)
 	ctx = meta.WithUser(ctx, userPairs...)
 
-	name := spanName(operation)
-	span := tracer.StartSpan(name, zipkin.Kind(model.Server), zipkin.Parent(sc), zipkin.RemoteEndpoint(remoteEndpointFromContext(ctx, remote)))
-	ctx = zipkin.NewContext(ctx, span)
 	return ctx
 }
 
@@ -148,13 +123,13 @@ func getStat(serviceName string, method string) *monitor.Stat {
 
 // ServerMiddleware is a grpc server middleware.
 func ServerMiddleware() middleware.Middleware {
-	return middleware.Chain(mmeta.Server(mmeta.WithPropagatedPrefix("")), serverMiddleware())
+	return middleware.Chain(mmeta.Server(mmeta.WithPropagatedPrefix("")), serverMiddleware(), tracing.Server())
 }
 
 // ServerMiddleware is a grpc server middleware.
 func serverMiddleware() middleware.Middleware {
 	var (
-		tracer      *zipkin.Tracer
+		localAddr   string
 		authen      auth.Auth
 		once        sync.Once
 		serviceName string
@@ -168,58 +143,35 @@ func serverMiddleware() middleware.Middleware {
 					panic(err)
 				}
 				k, _ := kratos.FromContext(ctx)
-				serviceName = k.Name
+				serviceName = k.Name()
 				builder := &authenticator.Builder{}
 				authen = builder.Build(consul.DefaultConsul(), naming.NewService(env.NamespaceID(), serviceName))
-				// create our local service endpoint
-				endpoint, err := zipkin.NewEndpoint(serviceName, u.Host)
-				if err != nil {
-					panic(err)
-				}
-				// initialize our tracer
-				tracer, err = zipkin.NewTracer(trace.GetReporter(), zipkin.WithLocalEndpoint(endpoint))
-				if err != nil {
-					panic(err)
-				}
+				localAddr = u.Host
 			})
 			var operation string
-			var path string
 			var method string = "POST"
 			if tr, ok := transport.FromServerContext(ctx); ok {
 				operation = tr.Operation()
-				path = operation
 				if tr.Kind() == transport.KindHTTP {
 					if ht, ok := tr.(*http.Transport); ok {
 						operation = ht.PathTemplate()
 						method = ht.Request().Method
-						path = ht.Request().URL.Path
 					}
 				}
 			} else if c, ok := gin.FromGinContext(ctx); ok {
 				operation = c.Ctx.FullPath()
 				method = c.Ctx.Request.Method
-				path = c.Ctx.Request.URL.Path
 			}
 
-			ctx = startServerContext(ctx, serviceName, method, operation, tracer)
+			ctx = startServerContext(ctx, serviceName, method, operation, localAddr)
 			stat := getStat(serviceName, operation)
-			span := zipkin.SpanFromContext(ctx)
-			span.Tag("http.method", method)
-			span.Tag("localInterface", operation)
-			span.Tag("http.path", path)
+
 			defer func() {
 				var code = 200
 				if err != nil {
 					code = errors.FromError(err).StatusCode()
-					span.Tag("exception", err.Error())
 				}
-				span.Tag("resultStatus", strconv.FormatInt(int64(code), 10))
 				stat.Record(code)
-
-				if err != nil {
-					zipkin.TagError.Set(span, err.Error())
-				}
-				span.Finish()
 			}()
 
 			// 鉴权

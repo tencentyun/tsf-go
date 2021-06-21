@@ -13,32 +13,33 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/version"
 	"github.com/tencentyun/tsf-go/route/composite"
+	"github.com/tencentyun/tsf-go/tracing"
 	"google.golang.org/grpc"
 )
 
 // Option is HTTP server option.
-type Option func(*serverOptions)
+type Option func(*appOptions)
 
 func ProtoServiceName(fullname string) Option {
-	return func(s *serverOptions) {
+	return func(s *appOptions) {
 		s.protoService = fullname
 	}
 }
 
 func GRPCServer(srv *grpc.Server) Option {
-	return func(s *serverOptions) {
+	return func(s *appOptions) {
 		s.srv = srv
 	}
 }
 
-type serverOptions struct {
+type appOptions struct {
 	protoService string
 	srv          *grpc.Server
 	apiMeta      bool
 }
 
 func APIMeta(enable bool) Option {
-	return func(s *serverOptions) {
+	return func(s *appOptions) {
 		s.apiMeta = enable
 	}
 }
@@ -49,7 +50,7 @@ func Metadata(optFuncs ...Option) (opt kratos.Option) {
 		enableApiMeta = false
 	}
 
-	var opts serverOptions = serverOptions{}
+	var opts appOptions = appOptions{}
 	for _, o := range optFuncs {
 		o(&opts)
 	}
@@ -91,7 +92,7 @@ func ClientGrpcOptions(m ...middleware.Middleware) []tgrpc.ClientOption {
 	router := composite.DefaultComposite()
 	multi.Register(router)
 	opts = []tgrpc.ClientOption{
-		tgrpc.WithOptions(grpc.WithBalancerName("tsf-random")),
+		tgrpc.WithOptions(grpc.WithBalancerName("tsf-random"), grpc.WithStatsHandler(&tracing.ClientHandler{})),
 		tgrpc.WithMiddleware(m...),
 		tgrpc.WithDiscovery(consul.DefaultConsul()),
 	}

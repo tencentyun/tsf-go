@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/natefinch/lumberjack"
-	"github.com/openzipkin/zipkin-go"
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -167,13 +167,12 @@ func Trace() log.Valuer {
 		if res := meta.Sys(ctx, meta.ServiceName); res != nil {
 			serverName = res.(string)
 		}
-
-		span := zipkin.SpanFromContext(ctx)
-		if span == nil {
-			return fmt.Sprintf("%s,,,true", serverName)
+		var traceID string
+		var spanID string
+		if span := trace.SpanContextFromContext(ctx); span.HasTraceID() {
+			traceID = span.TraceID().String()
+			spanID = span.SpanID().String()
 		}
-		traceID := span.Context().TraceID
-		spanID := span.Context().ID
 
 		return fmt.Sprintf("%s,%s,%s,true", serverName, traceID, spanID)
 	}

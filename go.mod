@@ -9,6 +9,8 @@ require (
 	github.com/go-kratos/kratos/v2 v2.0.0-rc5
 	github.com/go-kratos/swagger-api v0.1.4
 	github.com/go-playground/validator/v10 v10.6.1 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.0.3 // indirect
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/gops v0.3.18
 	github.com/gorilla/websocket v1.4.2 // indirect
@@ -26,6 +28,9 @@ require (
 	github.com/onsi/gomega v1.10.5 // indirect
 	github.com/openzipkin/zipkin-go v0.2.5
 	github.com/ugorji/go v1.2.6 // indirect
+	go.opentelemetry.io/otel v0.20.0
+	go.opentelemetry.io/otel/sdk v0.20.0
+	go.opentelemetry.io/otel/trace v0.20.0
 	go.uber.org/atomic v1.8.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.17.0
@@ -39,3 +44,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	nhooyr.io/websocket v1.8.7 // indirect
 )
+
+replace github.com/go-kratos/kratos/v2 v2.0.0-rc5 => github.com/go-kratos/kratos/v2 v2.0.0-20210620150027-59f54b26619e

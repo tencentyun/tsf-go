@@ -98,7 +98,6 @@ func NewServer(conf *Config, o ...grpc.ServerOption) (s *Server) {
 		grpc.StreamInterceptor(s.chainStreamServer()),
 		grpc.StatsHandler(zipkingrpc.NewServerHandler(tracer)),
 	)
-
 	// can be overwritten by user defined grpc options except UnaryInterceptor(which will cause panic)
 	opts = append(opts, o...)
 	s.Server = grpc.NewServer(opts...)
