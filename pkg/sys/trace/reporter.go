@@ -1,10 +1,9 @@
 package trace
 
 import (
-	"context"
 	"encoding/json"
 
-	"github.com/tencentyun/tsf-go/pkg/log"
+	"github.com/tencentyun/tsf-go/log"
 	"go.uber.org/zap"
 
 	"github.com/openzipkin/zipkin-go/model"
@@ -48,7 +47,7 @@ func (r *tsfReporter) Send(s model.SpanModel) {
 	}
 	content, err := json.Marshal(span)
 	if err != nil {
-		log.Error(context.Background(), "tsfReporter Marshal failed!", zap.Any("span", span))
+		log.DefaultLog.Errorw("msg", "tsfReporter Marshal failed!", "span", span)
 		return
 	}
 	r.logger.Info(string(content))

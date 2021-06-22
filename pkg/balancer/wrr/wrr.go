@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/balancer"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 )
 
@@ -260,7 +260,7 @@ func (p *WrrPicker) PrintStats() {
 		reqs += stat.reqs
 	}
 	if reqs > 10 {
-		log.Debugf(context.Background(), "p2c %s : %+v", serverName, stats)
+		log.DefaultLog.Debugf("p2c %s : %+v", serverName, stats)
 	}
 }
 

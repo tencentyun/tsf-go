@@ -8,10 +8,11 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var logger *zap.Logger
+// DefaultLogger is default trace logger
+var DefaultLogger *zap.Logger
 
 func init() {
-	logger = getLogger()
+	DefaultLogger = getLogger()
 }
 
 func getLogger() *zap.Logger {

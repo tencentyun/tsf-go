@@ -7,15 +7,13 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/config"
 	"github.com/tencentyun/tsf-go/pkg/config/consul"
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/route"
-	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
-
-	"go.uber.org/zap"
 )
 
 var (
@@ -52,7 +50,7 @@ func DefaultRouter() *Router {
 	return defaultRoute
 }
 
-func New(conf *Config, cfg config.Config) *Router {
+func New(conf *Config, cfg config.Source) *Router {
 	watcher := cfg.Subscribe(fmt.Sprintf("route/%s/", conf.NamespaceID))
 	r := &Router{
 		conf:     conf,
@@ -87,14 +85,14 @@ func (r *Router) Select(ctx context.Context, svc naming.Service, nodes []naming.
 	for _, rule := range ruleGroup.RuleList {
 		t := rule.toCommonTagRule()
 		if t.Hit(ctx) {
-			log.Debug(ctx, "[route]: hit rule", zap.Any("svc", svc), zap.Any("rule", rule))
+			log.DefaultLog.Debugw("msg", "[route]: hit rule", "svc", svc, "rule", rule)
 			hit = true
 			selects = r.matchByRule(rule, nodes)
 			if len(selects) != 0 {
 				break
 			}
 		} else {
-			log.Debug(ctx, "[route]: not hit rule", zap.Any("svc", svc), zap.Any("rule", rule))
+			log.DefaultLog.Debugw("msg", "[route]: not hit rule", "svc", svc, "rule", rule)
 		}
 	}
 	if !hit {
@@ -147,11 +145,11 @@ func (r *Router) refresh() {
 	for {
 		specs, err := r.watcher.Watch(r.ctx)
 		if err != nil {
-			if statusError.IsDeadline(err) || statusError.IsClientClosed(err) {
-				log.Error(context.Background(), "watch route config deadline or clsoe!exit now!", zap.Error(err))
+			if errors.IsGatewayTimeout(err) || errors.IsClientClosed(err) {
+				log.DefaultLog.Error("msg", "watch route config deadline or clsoe!exit now!", "err", err)
 				return
 			}
-			log.Error(context.Background(), "watch route config failed!", zap.Error(err))
+			log.DefaultLog.Errorw("msg", "watch route config failed!", "msg", err)
 			continue
 		}
 		services := make(map[naming.Service]RuleGroup)
@@ -159,7 +157,7 @@ func (r *Router) refresh() {
 			var ruleGroup []RuleGroup
 			err = spec.Data.Unmarshal(&ruleGroup)
 			if err != nil || len(ruleGroup) == 0 {
-				log.Error(context.Background(), "unmarshal route config failed!", zap.Error(err), zap.String("raw", string(spec.Data.Raw())))
+				log.DefaultLog.Errorw("msg", "unmarshal route config failed!", "err", err, "raw", string(spec.Data.Raw()))
 				continue
 			}
 			svc := naming.NewService(ruleGroup[0].NamespaceId, ruleGroup[0].MicroserviceName)
@@ -171,10 +169,10 @@ func (r *Router) refresh() {
 			}
 		}
 		if len(services) == 0 && err != nil {
-			log.Error(context.Background(), "get route config failed,not override old data!")
+			log.DefaultLog.Error("get route config failed,not override old data!")
 			continue
 		}
-		log.Infof(context.Background(), "[route] found new route,replace now! services: %v", services)
+		log.DefaultLog.Infof("[route] found new route,replace now! services: %v", services)
 		r.services.Store(services)
 	}
 }

@@ -8,4 +8,7 @@ trace_log.log
 trace.log
 monitor.log
 invocation_log.log
-tool/grpcCli/grpcCli
+examples/helloworld/grpc/consumer/consumer
+examples/helloworld/grpc/provider/provider
+examples/helloworld/http/consumer/consumer
+examples/helloworld/http/provider/provider

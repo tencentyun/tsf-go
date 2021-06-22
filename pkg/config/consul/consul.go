@@ -12,19 +12,18 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/config"
 	"github.com/tencentyun/tsf-go/pkg/http"
-	"github.com/tencentyun/tsf-go/pkg/log"
-	"github.com/tencentyun/tsf-go/pkg/statusError"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
 
-	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
 var (
-	_ config.Config = &Consul{}
+	_ config.Source = &Consul{}
 
 	defaultConsul *Consul
 	mu            sync.Mutex
@@ -112,7 +111,7 @@ func (c *Consul) fetch(path string, index int64) (res []config.Spec, consulIndex
 	}
 	defer func() {
 		if err != nil {
-			log.Error(context.Background(), "[config] get config failed!", zap.String("url", url), zap.Error(err))
+			log.DefaultLog.Errorw("msg", "[config] get config failed!", "url", url, "err", err)
 		}
 	}()
 
@@ -125,7 +124,7 @@ func (c *Consul) fetch(path string, index int64) (res []config.Spec, consulIndex
 	)
 	header, err = c.queryCli.Get(url, &items)
 	if err != nil {
-		if statusError.IsNotFound(err) {
+		if errors.IsNotFound(err) {
 			err = nil
 		} else {
 			return
@@ -135,17 +134,17 @@ func (c *Consul) fetch(path string, index int64) (res []config.Spec, consulIndex
 		str := header.Get("X-Consul-Index")
 		consulIndex, err = strconv.ParseInt(str, 10, 64)
 		if err != nil {
-			err = statusError.Internal(fmt.Sprintf("consul index invalid: %s", str))
+			err = errors.InternalServer(errors.UnknownReason, fmt.Sprintf("consul index invalid: %s", str))
 			return
 		}
 	} else {
-		err = statusError.New(500, "consul index invalid,no http header found!")
+		err = errors.InternalServer(errors.UnknownReason, "consul index invalid,no http header found!")
 		return
 	}
 	for _, item := range items {
 		b, err := base64.StdEncoding.DecodeString(item.Value)
 		if err != nil {
-			log.Error(context.Background(), "[config] fetch failed!", zap.String("url", url), zap.String("key", item.Key), zap.String("value", item.Value), zap.Error(err))
+			log.DefaultLog.Errorw("msg", "[config] fetch failed!", "url", url, "key", item.Key, "value", item.Value, "err", err)
 			continue
 		}
 		res = append(res, config.Spec{Key: item.Key, Data: raw(b)})
@@ -240,10 +239,10 @@ type Watcher struct {
 func (w *Watcher) Watch(ctx context.Context) (spec []config.Spec, err error) {
 	select {
 	case <-ctx.Done():
-		err = statusError.Deadline("")
+		err = errors.GatewayTimeout(errors.UnknownReason, "")
 		return
 	case <-w.ctx.Done():
-		err = statusError.ClientClosed("")
+		err = errors.ClientClosed(errors.UnknownReason, "")
 		return
 	case <-w.event:
 		spec, _ = w.topic.spec.Load().([]config.Spec)

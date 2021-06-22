@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/pkg/auth"
 	"github.com/tencentyun/tsf-go/pkg/auth/authenticator"
 	cfgConsul "github.com/tencentyun/tsf-go/pkg/config/consul"
 	tgrpc "github.com/tencentyun/tsf-go/pkg/grpc"         // NOTE: open json encoding by set header Content-Type: application/grpc+json
 	"github.com/tencentyun/tsf-go/pkg/grpc/encoding/json" // NOTE: open json encoding by set header Content-Type: application/grpc+json
-	"github.com/tencentyun/tsf-go/pkg/log"
 	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/naming/consul"
 	"github.com/tencentyun/tsf-go/pkg/proxy"
@@ -25,7 +25,7 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/sys/metrics"
 	"github.com/tencentyun/tsf-go/pkg/sys/trace"
 	"github.com/tencentyun/tsf-go/pkg/util"
-	"github.com/tencentyun/tsf-go/version"
+	"github.com/tencentyun/tsf-go/pkg/version"
 
 	"github.com/openzipkin/zipkin-go"
 	zipkingrpc "github.com/openzipkin/zipkin-go/middleware/grpc"
@@ -98,7 +98,6 @@ func NewServer(conf *Config, o ...grpc.ServerOption) (s *Server) {
 		grpc.StreamInterceptor(s.chainStreamServer()),
 		grpc.StatsHandler(zipkingrpc.NewServerHandler(tracer)),
 	)
-
 	// can be overwritten by user defined grpc options except UnaryInterceptor(which will cause panic)
 	opts = append(opts, o...)
 	s.Server = grpc.NewServer(opts...)
@@ -147,13 +146,13 @@ func (s *Server) Start() error {
 
 	go func() {
 		if env.DisableGrpcHttp() {
-			log.Info(context.Background(), "grpc server start serve and listen!", zap.String("name", s.conf.ServerName), zap.Int("port", s.conf.Port))
+			log.DefaultLog.Infow("msg", "grpc server start serve and listen!", "name", s.conf.ServerName, "port", s.conf.Port)
 			err = s.Serve(lis)
 			if err != nil {
 				panic(err)
 			}
 		} else {
-			log.Info(context.Background(), "grpc&http server start serve and listen!", zap.String("name", s.conf.ServerName), zap.Int("port", s.conf.Port))
+			log.DefaultLog.Infow("msg", "grpc&http server start serve and listen!", "name", s.conf.ServerName, "port", s.conf.Port)
 			serveHttp(s.Server, lis)
 		}
 	}()
@@ -162,14 +161,14 @@ func (s *Server) Start() error {
 	port := s.conf.Port
 	serDesc, err := tgrpc.GetServiceMethods(fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
-		log.Errorf(context.Background(), "GetServiceMethods failed", zap.String("addr", fmt.Sprintf("%s:%d", ip, port)), zap.Error(err))
+		log.DefaultLog.Errorw("msg", "GetServiceMethods failed", "addr", fmt.Sprintf("%s:%d", ip, port), "err", zap.Error(err))
 	}
 	api := apiMeta.GenApiMeta(serDesc)
 	var apiStr string
 	if len(api.Paths) > 0 {
 		apiStr, err = apiMeta.Encode(api)
 		if err != nil {
-			log.Error(context.Background(), "[grpc server] encode api failed!", zap.Any("api", api), zap.Error(err))
+			log.DefaultLog.Errorw("msg", "[grpc server] encode api failed!", "api", api, "err", err)
 		}
 	}
 	if proxy.Inited() && env.RemoteIP() != "" {
@@ -208,13 +207,13 @@ func (s *Server) Start() error {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGHUP)
 	sig := <-sigs
-	log.Info(context.Background(), "[server] got signal,exit now!", zap.String("sig", sig.String()), zap.String("name", s.conf.ServerName))
+	log.DefaultLog.Infow("msg", "[server] got signal,exit now!", "sig", sig.String(), "name", s.conf.ServerName)
 	consul.DefaultConsul().Deregister(&ins)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	if s.stopHook != nil {
 		err := s.stopHook(ctx)
 		if err != nil {
-			log.Error(ctx, "[server] stophook exec failed!", zap.String("name", s.conf.ServerName), zap.Error(err))
+			log.DefaultLog.Errorw("msg", "[server] stophook exec failed!", "name", s.conf.ServerName, "err", err)
 		}
 	}
 
@@ -223,15 +222,14 @@ func (s *Server) Start() error {
 	go func() {
 		s.GracefulStop()
 		trace.GetReporter().Close()
-		log.Sync()
 		cancel()
 	}()
 	<-ctx.Done()
 	if errors.Is(context.DeadlineExceeded, ctx.Err()) {
-		log.Error(ctx, "[server] graceful shutdown failed!", zap.String("name", s.conf.ServerName))
+		log.DefaultLog.Errorw("msg", "[server] graceful shutdown failed!", "name", s.conf.ServerName)
 		s.Stop()
 	} else {
-		log.Info(ctx, "[server] graceful shutdown success!", zap.String("name", s.conf.ServerName))
+		log.DefaultLog.Infow("msg", "[server] graceful shutdown success!", "name", s.conf.ServerName)
 	}
 	return nil
 }

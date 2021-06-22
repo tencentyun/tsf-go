@@ -8,7 +8,7 @@ import (
 )
 
 type Builder interface {
-	Build(cfg config.Config, svc naming.Service) Auth
+	Build(cfg config.Source, svc naming.Service) Auth
 }
 
 type Auth interface {

@@ -13,7 +13,7 @@ func GetReporter() reporter.Reporter {
 	mu.Lock()
 	defer mu.Unlock()
 	if report == nil {
-		report = &tsfReporter{logger: logger}
+		report = &tsfReporter{logger: DefaultLogger}
 	}
 	return report
 }
