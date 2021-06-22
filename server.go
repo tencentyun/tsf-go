@@ -7,36 +7,20 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tencentyun/tsf-go/gin"
 	"github.com/tencentyun/tsf-go/log"
-	"github.com/tencentyun/tsf-go/pkg/auth"
-	"github.com/tencentyun/tsf-go/pkg/auth/authenticator"
-	"github.com/tencentyun/tsf-go/pkg/config/consul"
 	tsfHttp "github.com/tencentyun/tsf-go/pkg/http"
 	"github.com/tencentyun/tsf-go/pkg/meta"
-	"github.com/tencentyun/tsf-go/pkg/naming"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
-	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 	"github.com/tencentyun/tsf-go/pkg/util"
 	"github.com/tencentyun/tsf-go/tracing"
 
 	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/metadata"
 	"github.com/go-kratos/kratos/v2/middleware"
 	mmeta "github.com/go-kratos/kratos/v2/middleware/metadata"
 	"github.com/go-kratos/kratos/v2/transport"
-	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/openzipkin/zipkin-go"
-	"github.com/openzipkin/zipkin-go/model"
 	"google.golang.org/grpc/peer"
 )
-
-func spanName(api string) string {
-	//name := strings.TrimPrefix(api, "/")
-	//name = strings.Replace(name, "/", ".", -1)
-	return api
-}
 
 func startServerContext(ctx context.Context, serviceName string, method string, operation string, addr string) context.Context {
 	// add system metadata into ctx
@@ -110,27 +94,10 @@ func startServerContext(ctx context.Context, serviceName string, method string, 
 	return ctx
 }
 
-func remoteEndpointFromContext(ctx context.Context, remoteAddr string) *model.Endpoint {
-	var name string = ""
-	name, _ = meta.Sys(ctx, meta.SourceKey(meta.ServiceName)).(string)
-	ep, _ := zipkin.NewEndpoint(name, remoteAddr)
-	return ep
-}
-
-func getStat(serviceName string, method string) *monitor.Stat {
-	return monitor.NewStat(monitor.CategoryMS, monitor.KindServer, &monitor.Endpoint{ServiceName: serviceName, InterfaceName: method, Path: method, Method: "POST"}, nil)
-}
-
-// ServerMiddleware is a grpc server middleware.
-func ServerMiddleware() middleware.Middleware {
-	return middleware.Chain(mmeta.Server(mmeta.WithPropagatedPrefix("")), serverMiddleware(), tracing.Server())
-}
-
 // ServerMiddleware is a grpc server middleware.
 func serverMiddleware() middleware.Middleware {
 	var (
 		localAddr   string
-		authen      auth.Auth
 		once        sync.Once
 		serviceName string
 	)
@@ -144,44 +111,19 @@ func serverMiddleware() middleware.Middleware {
 				}
 				k, _ := kratos.FromContext(ctx)
 				serviceName = k.Name()
-				builder := &authenticator.Builder{}
-				authen = builder.Build(consul.DefaultConsul(), naming.NewService(env.NamespaceID(), serviceName))
 				localAddr = u.Host
 			})
-			var operation string
-			var method string = "POST"
-			if tr, ok := transport.FromServerContext(ctx); ok {
-				operation = tr.Operation()
-				if tr.Kind() == transport.KindHTTP {
-					if ht, ok := tr.(*http.Transport); ok {
-						operation = ht.PathTemplate()
-						method = ht.Request().Method
-					}
-				}
-			} else if c, ok := gin.FromGinContext(ctx); ok {
-				operation = c.Ctx.FullPath()
-				method = c.Ctx.Request.Method
-			}
 
+			method, operation := ServerOperation(ctx)
 			ctx = startServerContext(ctx, serviceName, method, operation, localAddr)
-			stat := getStat(serviceName, operation)
-
-			defer func() {
-				var code = 200
-				if err != nil {
-					code = errors.FromError(err).StatusCode()
-				}
-				stat.Record(code)
-			}()
-
-			// 鉴权
-			err = authen.Verify(ctx, operation)
-			if err != nil {
-				return
-			}
 
 			resp, err = handler(ctx, req)
 			return
 		}
 	}
+}
+
+// ServerMiddleware is a grpc server middleware.
+func ServerMiddleware() middleware.Middleware {
+	return middleware.Chain(mmeta.Server(mmeta.WithPropagatedPrefix("")), serverMiddleware(), tracing.Server(), serverMetricsMiddleware(), authMiddleware())
 }

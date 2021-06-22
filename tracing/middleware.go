@@ -18,12 +18,12 @@ import (
 
 // Server returns a new server middleware for OpenTelemetry.
 func Server(opts ...Option) middleware.Middleware {
-	tracer, err := NewTracer(trace.SpanKindServer, opts...)
-	if err != nil {
-		panic(err)
+	tracer, e := NewTracer(trace.SpanKindServer, opts...)
+	if e != nil {
+		panic(e)
 	}
 	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (interface{}, error) {
+		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
 			if tr, ok := transport.FromServerContext(ctx); ok {
 				method := "POST"
 				operation := tr.Operation()
@@ -69,19 +69,21 @@ func Server(opts ...Option) middleware.Middleware {
 				span.SetAttributes(attribute.String("http.path", path))
 				defer func() { tracer.End(ctx, span, err) }()
 			}
-			return handler(ctx, req)
+
+			reply, err = handler(ctx, req)
+			return
 		}
 	}
 }
 
 // Client returns a new client middleware for OpenTelemetry.
 func Client(opts ...Option) middleware.Middleware {
-	tracer, err := NewTracer(trace.SpanKindClient, opts...)
-	if err != nil {
-		panic(err)
+	tracer, e := NewTracer(trace.SpanKindClient, opts...)
+	if e != nil {
+		panic(e)
 	}
 	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (interface{}, error) {
+		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
 			if tr, ok := transport.FromClientContext(ctx); ok {
 				operation := tr.Operation()
 				path := tr.Operation()
@@ -126,8 +128,8 @@ func Client(opts ...Option) middleware.Middleware {
 				}()
 			}
 
-			return handler(ctx, req)
-
+			reply, err = handler(ctx, req)
+			return
 		}
 	}
 }

@@ -3,7 +3,6 @@ package tsf
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"sync"
 
 	"github.com/tencentyun/tsf-go/pkg/grpc/balancer/multi"
@@ -11,25 +10,15 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/route/composite"
 	"github.com/tencentyun/tsf-go/pkg/route/lane"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
-	"github.com/tencentyun/tsf-go/pkg/sys/monitor"
 	"github.com/tencentyun/tsf-go/tracing"
+	"github.com/tencentyun/tsf-go/util"
 
 	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/metadata"
 	"github.com/go-kratos/kratos/v2/middleware"
 	mmeta "github.com/go-kratos/kratos/v2/middleware/metadata"
 	"github.com/go-kratos/kratos/v2/transport"
-	"github.com/go-kratos/kratos/v2/transport/http"
 )
-
-func getClientStat(ctx context.Context, remoteServiceName string, operation string, method string) *monitor.Stat {
-	localService, _ := meta.Sys(ctx, meta.ServiceName).(string)
-	localOperation, _ := meta.Sys(ctx, meta.Interface).(string)
-	localMethod, _ := meta.Sys(ctx, meta.RequestHTTPMethod).(string)
-
-	return monitor.NewStat(monitor.CategoryMS, monitor.KindClient, &monitor.Endpoint{ServiceName: localService, InterfaceName: localOperation, Path: localOperation, Method: localMethod}, &monitor.Endpoint{ServiceName: remoteServiceName, InterfaceName: operation, Path: operation, Method: method})
-}
 
 func startClientContext(ctx context.Context, remoteServiceName string, l *lane.Lane, operation string) context.Context {
 	// 注入远端服务名
@@ -72,25 +61,6 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 	return metadata.MergeToClientContext(ctx, md)
 }
 
-func parseTarget(endpoint string) (string, error) {
-	u, err := url.Parse(endpoint)
-	if err != nil {
-		if u, err = url.Parse("http://" + endpoint); err != nil {
-			return "", err
-		}
-	}
-	var service string
-	if len(u.Path) > 1 {
-		service = u.Path[1:]
-	}
-	return service, nil
-}
-
-// ClientMiddleware is client middleware
-func ClientMiddleware() middleware.Middleware {
-	return middleware.Chain(clientMiddleware(), tracing.Client(), mmeta.Client())
-}
-
 func clientMiddleware() middleware.Middleware {
 	router := composite.DefaultComposite()
 	multi.Register(router)
@@ -101,31 +71,18 @@ func clientMiddleware() middleware.Middleware {
 		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
 			once.Do(func() {
 				tr, _ := transport.FromClientContext(ctx)
-				remoteServiceName, _ = parseTarget(tr.Endpoint())
+				remoteServiceName, _ = util.ParseTarget(tr.Endpoint())
 			})
-			var operation string
-			var method string = "POST"
-			if tr, ok := transport.FromClientContext(ctx); ok {
-				operation = tr.Operation()
-				if tr.Kind() == transport.KindHTTP {
-					if ht, ok := tr.(*http.Transport); ok {
-						operation = ht.PathTemplate()
-						method = ht.Request().Method
-					}
-				}
-			}
-
+			_, operation := ClientOperation(ctx)
 			ctx = startClientContext(ctx, remoteServiceName, lane, operation)
-			stat := getClientStat(ctx, remoteServiceName, operation, method)
-			defer func() {
-				var code = 200
-				if err != nil {
-					code = errors.FromError(err).StatusCode()
-				}
-				stat.Record(code)
-			}()
+
 			reply, err = handler(ctx, req)
 			return
 		}
 	}
+}
+
+// ClientMiddleware is client middleware
+func ClientMiddleware() middleware.Middleware {
+	return middleware.Chain(clientMiddleware(), tracing.Client(), clientMetricsMiddleware(), mmeta.Client())
 }
