@@ -7,6 +7,7 @@ import (
 	"github.com/go-kratos/kratos/v2/registry"
 	"github.com/openzipkin/zipkin-go"
 	tBalancer "github.com/tencentyun/tsf-go/balancer"
+	"github.com/tencentyun/tsf-go/balancer/p2c"
 	"github.com/tencentyun/tsf-go/balancer/random"
 	"github.com/tencentyun/tsf-go/log"
 	"github.com/tencentyun/tsf-go/naming"
@@ -30,28 +31,16 @@ func init() {
 
 	// random
 	balancers = append(balancers, &random.Picker{})
+	// p2c
+	balancers = append(balancers, p2c.New(nil))
 
 }
 
 // Register register balancer builder if nil.
-func Register(router route.Router) {
+func Register(router route.Router, b tBalancer.Balancer) {
 	mu.Lock()
 	defer mu.Unlock()
-	for _, b := range balancers {
-		if balancer.Get(b.Schema()) == nil {
-			balancer.Register(newBuilder(router, b))
-		}
-	}
-
-}
-
-// Set overwrite any balancer builder.
-func Set(router route.Router) {
-	mu.Lock()
-	defer mu.Unlock()
-	for _, b := range balancers {
-		balancer.Register(newBuilder(router, b))
-	}
+	balancer.Register(newBuilder(router, b))
 }
 
 type Builder struct {

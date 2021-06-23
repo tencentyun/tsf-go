@@ -10,7 +10,10 @@ import (
 
 func ServerOperation(ctx context.Context) (method string, operation string) {
 	method = "POST"
-	if tr, ok := transport.FromServerContext(ctx); ok {
+	if c, ok := gin.FromGinContext(ctx); ok {
+		operation = c.Ctx.FullPath()
+		method = c.Ctx.Request.Method
+	} else if tr, ok := transport.FromServerContext(ctx); ok {
 		operation = tr.Operation()
 		if tr.Kind() == transport.KindHTTP {
 			if ht, ok := tr.(*http.Transport); ok {
@@ -18,9 +21,6 @@ func ServerOperation(ctx context.Context) (method string, operation string) {
 				method = ht.Request().Method
 			}
 		}
-	} else if c, ok := gin.FromGinContext(ctx); ok {
-		operation = c.Ctx.FullPath()
-		method = c.Ctx.Request.Method
 	}
 	return
 }

@@ -6,7 +6,7 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/fullstorydev/grpcurl v1.8.1
 	github.com/gin-gonic/gin v1.7.2
-	github.com/go-kratos/kratos/v2 v2.0.0-rc5
+	github.com/go-kratos/kratos/v2 v2.0.0-rc6
 	github.com/go-kratos/swagger-api v0.1.4
 	github.com/go-playground/validator/v10 v10.6.1 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
@@ -27,6 +27,7 @@ require (
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect
 	github.com/openzipkin/zipkin-go v0.2.5
+	github.com/stretchr/testify v1.7.0
 	github.com/ugorji/go v1.2.6 // indirect
 	go.opentelemetry.io/otel v0.20.0
 	go.opentelemetry.io/otel/sdk v0.20.0
@@ -44,5 +45,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	nhooyr.io/websocket v1.8.7 // indirect
 )
-
-replace github.com/go-kratos/kratos/v2 v2.0.0-rc5 => github.com/go-kratos/kratos/v2 v2.0.0-20210620150027-59f54b26619e

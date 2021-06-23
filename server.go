@@ -22,6 +22,18 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
+type ServerOption func(*serverOpionts)
+
+type serverOpionts struct {
+	tracerOpts []tracing.Option
+}
+
+func TracerOpts(opts ...tracing.Option) ServerOption {
+	return func(o *serverOpionts) {
+		o.tracerOpts = opts
+	}
+}
+
 func startServerContext(ctx context.Context, serviceName string, method string, operation string, addr string) context.Context {
 	// add system metadata into ctx
 	var (
@@ -125,5 +137,5 @@ func serverMiddleware() middleware.Middleware {
 
 // ServerMiddleware is a grpc server middleware.
 func ServerMiddleware() middleware.Middleware {
-	return middleware.Chain(mmeta.Server(mmeta.WithPropagatedPrefix("")), serverMiddleware(), tracing.Server(), serverMetricsMiddleware(), authMiddleware())
+	return middleware.Chain(mmeta.Server(mmeta.WithPropagatedPrefix("")), serverMiddleware(), tracingServer(), serverMetricsMiddleware(), authMiddleware())
 }

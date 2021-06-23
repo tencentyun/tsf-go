@@ -5,11 +5,16 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/tencentyun/tsf-go/pkg/grpc/balancer/multi"
+	"github.com/tencentyun/tsf-go/balancer"
+	"github.com/tencentyun/tsf-go/balancer/p2c"
+	"github.com/tencentyun/tsf-go/breaker"
+	"github.com/tencentyun/tsf-go/grpc/balancer/multi"
+	httpMulti "github.com/tencentyun/tsf-go/http/balancer/multi"
+	"github.com/tencentyun/tsf-go/naming/consul"
 	"github.com/tencentyun/tsf-go/pkg/meta"
-	"github.com/tencentyun/tsf-go/pkg/route/composite"
-	"github.com/tencentyun/tsf-go/pkg/route/lane"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
+	"github.com/tencentyun/tsf-go/route/composite"
+	"github.com/tencentyun/tsf-go/route/lane"
 	"github.com/tencentyun/tsf-go/tracing"
 	"github.com/tencentyun/tsf-go/util"
 
@@ -18,7 +23,44 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware"
 	mmeta "github.com/go-kratos/kratos/v2/middleware/metadata"
 	"github.com/go-kratos/kratos/v2/transport"
+	tgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
+	"github.com/go-kratos/kratos/v2/transport/http"
+	"google.golang.org/grpc"
 )
+
+type ClientOption func(*clientOpionts)
+
+type clientOpionts struct {
+	tracerOpts       []tracing.Option
+	breakerCfg       *breaker.Config
+	breakerErrorHook func(ctx context.Context, operation string, err error) (success bool)
+	m                []middleware.Middleware
+	balancer         balancer.Balancer
+}
+
+func WithTracerOpts(opts ...tracing.Option) ClientOption {
+	return func(o *clientOpionts) {
+		o.tracerOpts = opts
+	}
+}
+
+func WithBreakerConfig(cfg *breaker.Config) ClientOption {
+	return func(o *clientOpionts) {
+		o.breakerCfg = cfg
+	}
+}
+
+func WithBreakerErrorHook(h func(ctx context.Context, operation string, err error) (success bool)) ClientOption {
+	return func(o *clientOpionts) {
+		o.breakerErrorHook = h
+	}
+}
+
+func WithMiddlewares(m ...middleware.Middleware) ClientOption {
+	return func(o *clientOpionts) {
+		o.m = append(o.m, m...)
+	}
+}
 
 func startClientContext(ctx context.Context, remoteServiceName string, l *lane.Lane, operation string) context.Context {
 	// 注入远端服务名
@@ -63,7 +105,6 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 
 func clientMiddleware() middleware.Middleware {
 	router := composite.DefaultComposite()
-	multi.Register(router)
 	lane := router.Lane()
 	var remoteServiceName string
 	var once sync.Once
@@ -84,5 +125,43 @@ func clientMiddleware() middleware.Middleware {
 
 // ClientMiddleware is client middleware
 func ClientMiddleware() middleware.Middleware {
-	return middleware.Chain(clientMiddleware(), tracing.Client(), clientMetricsMiddleware(), mmeta.Client())
+	return middleware.Chain(clientMiddleware(), tracingClient(), clientMetricsMiddleware(), mmeta.Client())
+}
+
+func ClientGrpcOptions(copts ...ClientOption) []tgrpc.ClientOption {
+	var o clientOpionts = clientOpionts{
+		m:        []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
+		balancer: p2c.New(nil),
+	}
+	for _, opt := range copts {
+		opt(&o)
+	}
+
+	var opts []tgrpc.ClientOption
+	// 将负载均衡模块注册至grpc
+	multi.Register(composite.DefaultComposite(), o.balancer)
+	opts = []tgrpc.ClientOption{
+		tgrpc.WithOptions(grpc.WithBalancerName(o.balancer.Schema()), grpc.WithStatsHandler(&tracing.ClientHandler{})),
+		tgrpc.WithMiddleware(o.m...),
+		tgrpc.WithDiscovery(consul.DefaultConsul()),
+	}
+	return opts
+}
+
+func ClientHTTPOptions(copts ...ClientOption) []http.ClientOption {
+	var o clientOpionts = clientOpionts{
+		m:        []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
+		balancer: p2c.New(nil),
+	}
+	for _, opt := range copts {
+		opt(&o)
+	}
+
+	var opts []http.ClientOption
+	opts = []http.ClientOption{
+		http.WithBalancer(httpMulti.New(composite.DefaultComposite(), o.balancer)),
+		http.WithMiddleware(o.m...),
+		http.WithDiscovery(consul.DefaultConsul()),
+	}
+	return opts
 }

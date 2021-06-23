@@ -1,19 +1,12 @@
 package tsf
 
 import (
-	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/middleware"
-	tgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
-	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/go-kratos/swagger-api/openapiv2"
-	"github.com/tencentyun/tsf-go/balancer/random"
-	"github.com/tencentyun/tsf-go/grpc/balancer/multi"
-	httpMulti "github.com/tencentyun/tsf-go/http/balancer/multi"
 	"github.com/tencentyun/tsf-go/naming/consul"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/version"
-	"github.com/tencentyun/tsf-go/route/composite"
-	"github.com/tencentyun/tsf-go/tracing"
+
+	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/swagger-api/openapiv2"
 	"google.golang.org/grpc"
 )
 
@@ -82,35 +75,6 @@ func ID(optFuncs ...Option) kratos.Option {
 }
 func Registrar(optFuncs ...Option) kratos.Option {
 	return kratos.Registrar(consul.DefaultConsul())
-}
-
-func ClientGrpcOptions(m ...middleware.Middleware) []tgrpc.ClientOption {
-	var opts []tgrpc.ClientOption
-
-	m = append(m, ClientMiddleware())
-	// 将wrr负载均衡模块注入至grpc
-	router := composite.DefaultComposite()
-	multi.Register(router)
-	opts = []tgrpc.ClientOption{
-		tgrpc.WithOptions(grpc.WithBalancerName("tsf-random"), grpc.WithStatsHandler(&tracing.ClientHandler{})),
-		tgrpc.WithMiddleware(m...),
-		tgrpc.WithDiscovery(consul.DefaultConsul()),
-	}
-	return opts
-}
-
-func ClientHTTPOptions(m ...middleware.Middleware) []http.ClientOption {
-	var opts []http.ClientOption
-
-	router := composite.DefaultComposite()
-	b := &random.Picker{}
-	m = append(m, ClientMiddleware())
-	opts = []http.ClientOption{
-		http.WithBalancer(httpMulti.New(router, b)),
-		http.WithMiddleware(m...),
-		http.WithDiscovery(consul.DefaultConsul()),
-	}
-	return opts
 }
 
 func AppOptions(optFuncs ...Option) []kratos.Option {

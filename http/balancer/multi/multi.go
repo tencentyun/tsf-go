@@ -24,6 +24,7 @@ func New(router route.Router, b tBalancer.Balancer) *Balancer {
 		r: router, b: b,
 	}
 }
+
 func (b *Balancer) Pick(ctx context.Context, nodes []*registry.ServiceInstance) (node *registry.ServiceInstance, done func(context.Context, balancer.DoneInfo), err error) {
 	var inss []naming.Instance
 	for _, node := range nodes {

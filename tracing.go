@@ -1,24 +1,30 @@
-package tracing
+package tsf
 
 import (
 	"context"
 	"net/url"
 
+	"github.com/tencentyun/tsf-go/gin"
+	"github.com/tencentyun/tsf-go/pkg/meta"
+	"github.com/tencentyun/tsf-go/tracing"
+	"github.com/tencentyun/tsf-go/util"
+
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/tencentyun/tsf-go/gin"
-	"github.com/tencentyun/tsf-go/pkg/meta"
-	"github.com/tencentyun/tsf-go/util"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/peer"
 )
 
-// Server returns a new server middleware for OpenTelemetry.
-func Server(opts ...Option) middleware.Middleware {
-	tracer, e := NewTracer(trace.SpanKindServer, opts...)
+// tracingServer returns a new server middleware for OpenTelemetry.
+func tracingServer(opts ...ServerOption) middleware.Middleware {
+	var o serverOpionts
+	for _, opt := range opts {
+		opt(&o)
+	}
+	tracer, e := tracing.NewTracer(trace.SpanKindServer, o.tracerOpts...)
 	if e != nil {
 		panic(e)
 	}
@@ -29,17 +35,17 @@ func Server(opts ...Option) middleware.Middleware {
 				operation := tr.Operation()
 				path := tr.Operation()
 				var remote string
-				if tr.Kind() == transport.KindHTTP {
+				if c, ok := gin.FromGinContext(ctx); ok {
+					operation = c.Ctx.FullPath()
+					method = c.Ctx.Request.Method
+					path = c.Ctx.Request.URL.Path
+					remote = c.Ctx.Request.RemoteAddr
+				} else if tr.Kind() == transport.KindHTTP {
 					if ht, ok := tr.(*http.Transport); ok {
 						operation = ht.PathTemplate()
 						method = ht.Request().Method
 						path = ht.Request().URL.Path
 						remote = ht.Request().RemoteAddr
-					} else if c, ok := gin.FromGinContext(ctx); ok {
-						operation = c.Ctx.FullPath()
-						method = c.Ctx.Request.Method
-						path = c.Ctx.Request.URL.Path
-						remote = c.Ctx.Request.RemoteAddr
 					}
 				} else if tr.Kind() == transport.KindGRPC {
 					if p, ok := peer.FromContext(ctx); ok {
@@ -76,9 +82,13 @@ func Server(opts ...Option) middleware.Middleware {
 	}
 }
 
-// Client returns a new client middleware for OpenTelemetry.
-func Client(opts ...Option) middleware.Middleware {
-	tracer, e := NewTracer(trace.SpanKindClient, opts...)
+// tracingClient returns a new client middleware for OpenTelemetry.
+func tracingClient(opts ...ClientOption) middleware.Middleware {
+	var o clientOpionts
+	for _, opt := range opts {
+		opt(&o)
+	}
+	tracer, e := tracing.NewTracer(trace.SpanKindClient, o.tracerOpts...)
 	if e != nil {
 		panic(e)
 	}

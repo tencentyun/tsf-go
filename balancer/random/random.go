@@ -11,10 +11,14 @@ import (
 var (
 	_ balancer.Balancer = &Picker{}
 
-	Name = "tsf-random"
+	Name = "random"
 )
 
 type Picker struct {
+}
+
+func New() *Picker {
+	return &Picker{}
 }
 
 func (p *Picker) Pick(ctx context.Context, nodes []naming.Instance) (node *naming.Instance, done func(balancer.DoneInfo)) {
