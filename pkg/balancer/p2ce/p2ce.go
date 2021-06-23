@@ -187,7 +187,7 @@ func (p *P2cPicker) prePick(nodes []naming.Instance) (nodeA *subConn, nodeB *sub
 		}
 		if nodeB == nil {
 			nodeB = newSubConn(&nodes[b])
-			p.subConns[nodeA.node.Addr()] = nodeB
+			p.subConns[nodeB.node.Addr()] = nodeB
 		}
 		p.lk.Unlock()
 

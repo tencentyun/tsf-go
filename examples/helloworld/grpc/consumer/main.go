@@ -38,7 +38,7 @@ func callGRPC() {
 	client := pb.NewGreeterClient(conn)
 	reply, err := client.SayHello(context.Background(), &pb.HelloRequest{Name: "kratos_grpc"})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("say hello failed!", err)
 	}
 	log.Printf("[grpc] SayHello %+v\n", reply)
 }
