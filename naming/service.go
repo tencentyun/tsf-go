@@ -87,9 +87,13 @@ func FromKratosInstance(ki *registry.ServiceInstance) (inss []*Instance) {
 	for _, e := range ki.Endpoints {
 		scheme, ip, port := parseEndpoint(e)
 		status, _ := strconv.Atoi(ki.Metadata["tsf_status"])
+		id := ki.ID
+		if len(ki.Endpoints) > 1 {
+			id += "-" + scheme
+		}
 		ins := &Instance{
 			Service:  &Service{Namespace: ki.Metadata[NamespaceID], Name: ki.Name},
-			ID:       ki.ID + "-" + scheme,
+			ID:       id,
 			Region:   ki.Metadata[Region],
 			Host:     ip,
 			Port:     port,
