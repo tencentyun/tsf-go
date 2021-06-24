@@ -44,12 +44,12 @@ var (
 	remoteIP   string
 )
 
-func LogLevel() int {
+func LogLevel() int8 {
 	//DebugLevel Level = -1
 	//InfoLevel Level = 0
 	//WarnLevel Level = 1
 	//ErrorLevel Level = 2
-	return logLevel
+	return int8(logLevel)
 }
 
 func LogPath() string {

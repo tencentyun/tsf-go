@@ -7,7 +7,9 @@ import (
 
 // Config broker config.
 type Config struct {
-	SwitchOff bool // breaker switch,default off.
+	// breaker switch
+	// set true to close breaker
+	SwitchOff bool
 
 	// Google
 	K float64

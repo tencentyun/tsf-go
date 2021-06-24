@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/tencentyun/tsf-go/log"
@@ -96,9 +97,9 @@ func NewTracer(kind trace.SpanKind, opts ...Option) (*Tracer, error) {
 	otel.SetTextMapPropagator(options.Propagators)
 	switch kind {
 	case trace.SpanKindClient:
-		return &Tracer{tracer: otel.Tracer("client"), kind: kind}, nil
+		return &Tracer{tracer: otel.Tracer("CLIENT"), kind: kind}, nil
 	case trace.SpanKindServer:
-		return &Tracer{tracer: otel.Tracer("server"), kind: kind}, nil
+		return &Tracer{tracer: otel.Tracer("SERVER"), kind: kind}, nil
 	default:
 		return nil, fmt.Errorf("unsupported span kind: %v", kind)
 	}
@@ -164,7 +165,7 @@ func (e *Exporter) ExportSpans(ctx context.Context, ss []*tracesdk.SpanSnapshot)
 		span := Span{
 			TraceID:   s.SpanContext.TraceID().String(),
 			ID:        s.SpanContext.SpanID().String(),
-			Kind:      s.SpanKind.String(),
+			Kind:      strings.ToUpper(s.SpanKind.String()),
 			Name:      s.Name,
 			Timestamp: s.StartTime.UnixNano() / 1000,
 			Duration:  int64(s.EndTime.Sub(s.StartTime)) / 1000,

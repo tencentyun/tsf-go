@@ -15,6 +15,30 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+type Level int8
+
+const (
+	LevelDebug Level = iota - 1
+	LevelInfo
+	LevelWarn
+	LevelError
+	LevelFatal
+)
+
+type Option func(t *tsfLogger)
+
+func WithLevel(l Level) Option {
+	return func(t *tsfLogger) {
+		t.level = l
+	}
+}
+
+func WithZap(logger *zap.Logger) Option {
+	return func(t *tsfLogger) {
+		t.logger = logger
+	}
+}
+
 var (
 	// DefaultLog is default tsf logger
 	DefaultLogger log.Logger  = NewLogger()
@@ -23,7 +47,7 @@ var (
 
 func newZap() *zap.Logger {
 	var zapLogger *zap.Logger
-	level := zap.NewAtomicLevelAt(zapcore.Level(env.LogLevel()))
+	level := zap.NewAtomicLevelAt(zapcore.DebugLevel)
 	if env.LogPath() == "stdout" || env.LogPath() == "stderr" || env.LogPath() == "std" {
 		var err error
 		config := &zap.Config{
@@ -84,12 +108,13 @@ func newZap() *zap.Logger {
 }
 
 type tsfLogger struct {
+	level  Level
 	logger *zap.Logger
 	pool   *sync.Pool
 }
 
 // newTSFLogger new a logger with writer.
-func newTSFLogger() log.Logger {
+func newTSFLogger() *tsfLogger {
 	return &tsfLogger{
 		logger: newZap(),
 		pool: &sync.Pool{
@@ -97,12 +122,16 @@ func newTSFLogger() log.Logger {
 				return new(bytes.Buffer)
 			},
 		},
+		level: Level(env.LogLevel()),
 	}
 }
 
 // Log print the kv pairs log.
 func (l *tsfLogger) Log(level log.Level, keyvals ...interface{}) error {
 	if len(keyvals) == 0 {
+		return nil
+	}
+	if int8(l.level) > int8(level) {
 		return nil
 	}
 	if len(keyvals)%2 != 0 {
@@ -147,8 +176,11 @@ func (l *tsfLogger) Log(level log.Level, keyvals ...interface{}) error {
 }
 
 // NewLogger return tsf new logger
-func NewLogger() log.Logger {
+func NewLogger(opts ...Option) log.Logger {
 	logger := newTSFLogger()
+	for _, opt := range opts {
+		opt(logger)
+	}
 	return log.With(logger, "trace", Trace())
 }
 

@@ -5,23 +5,26 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/middleware/logging"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
+	tsf "github.com/tencentyun/tsf-go"
 	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 	"github.com/tencentyun/tsf-go/log"
 
-	tsf "github.com/tencentyun/tsf-go"
+	"github.com/go-kratos/kratos/v2"
+	klog "github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/logging"
+	"github.com/go-kratos/kratos/v2/middleware/recovery"
+	"github.com/go-kratos/kratos/v2/transport/grpc"
 )
 
 // server is used to implement helloworld.GreeterServer.
 type server struct {
+	l *klog.Helper
 	pb.UnimplementedGreeterServer
 }
 
 // SayHello implements helloworld.GreeterServer
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	s.l.Infof("recv name:%s", in.Name)
 	return &pb.HelloReply{Message: fmt.Sprintf("Welcome %+v!", in.Name)}, nil
 }
 
@@ -38,7 +41,7 @@ func main() {
 			logging.Server(logger),
 		),
 	)
-	s := &server{}
+	s := &server{l: log}
 	pb.RegisterGreeterServer(grpcSrv, s)
 
 	opts := []kratos.Option{kratos.Name("provider-grpc"), kratos.Server(grpcSrv)}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-kratos/kratos/v2/api/metadata"
 	"github.com/go-kratos/swagger-api/openapiv2"
+	"github.com/tencentyun/tsf-go/log"
 )
 
 func genAPIMeta(md map[string]string, srv *openapiv2.Service, serviceName string) {
@@ -16,19 +17,34 @@ func genAPIMeta(md map[string]string, srv *openapiv2.Service, serviceName string
 	defer cancel()
 	var httpAPIMeta string
 	var rpcAPIMeta string
+	var err error
 	if serviceName != "" {
-		httpAPIMeta, _ = srv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: serviceName}, false)
-		rpcAPIMeta, _ = srv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: serviceName}, true)
+		httpAPIMeta, err = srv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: serviceName}, false)
+		if err != nil {
+			log.DefaultLog.Errorf("GetServiceOpenAPI %s failed!err:=%v", serviceName, err)
+		}
+		rpcAPIMeta, err = srv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: serviceName}, true)
+		if err != nil {
+			log.DefaultLog.Errorf("GetServiceOpenAPI %s failed!err:=%v", serviceName, err)
+		}
 	} else {
 		reply, err := srv.ListServices(ctx, &metadata.ListServicesRequest{})
 		if err == nil {
 			for _, service := range reply.Services {
 				if service != "grpc.health.v1.Health" && service != "grpc.reflection.v1alpha.ServerReflection" && service != "kratos.api.Metadata" {
-					httpAPIMeta, _ = srv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: service}, false)
-					rpcAPIMeta, _ = srv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: service}, true)
+					httpAPIMeta, err = srv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: service}, false)
+					if err != nil {
+						log.DefaultLog.Errorf("GetServiceOpenAPI %s failed!err:=%v", serviceName, err)
+					}
+					rpcAPIMeta, err = srv.GetServiceOpenAPI(ctx, &metadata.GetServiceDescRequest{Name: service}, true)
+					if err != nil {
+						log.DefaultLog.Errorf("GetServiceOpenAPI %s failed!err:=%v", serviceName, err)
+					}
 					break
 				}
 			}
+		} else if err != nil {
+			log.DefaultLog.Errorf("ListServicesOpenAPI failed!err:=%v", serviceName, err)
 		}
 	}
 	if httpAPIMeta != "" {

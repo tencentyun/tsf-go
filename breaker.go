@@ -14,6 +14,13 @@ func breakerMiddleware(opts ...ClientOption) middleware.Middleware {
 	for _, opt := range opts {
 		opt(&o)
 	}
+	if o.breakerCfg != nil && o.breakerCfg.SwitchOff {
+		return func(handler middleware.Handler) middleware.Handler {
+			return func(ctx context.Context, req interface{}) (interface{}, error) {
+				return handler(ctx, req)
+			}
+		}
+	}
 	group := breaker.NewGroup(o.breakerCfg)
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
