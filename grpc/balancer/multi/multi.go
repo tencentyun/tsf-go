@@ -7,6 +7,7 @@ import (
 	"github.com/go-kratos/kratos/v2/registry"
 	"github.com/openzipkin/zipkin-go"
 	tBalancer "github.com/tencentyun/tsf-go/balancer"
+	"github.com/tencentyun/tsf-go/balancer/hash"
 	"github.com/tencentyun/tsf-go/balancer/p2c"
 	"github.com/tencentyun/tsf-go/balancer/random"
 	"github.com/tencentyun/tsf-go/log"
@@ -33,6 +34,8 @@ func init() {
 	balancers = append(balancers, &random.Picker{})
 	// p2c
 	balancers = append(balancers, p2c.New(nil))
+
+	balancers = append(balancers, hash.New())
 
 }
 

@@ -133,6 +133,7 @@ func ClientGrpcOptions(copts ...ClientOption) []tgrpc.ClientOption {
 		m:        []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
 		balancer: p2c.New(nil),
 		//balancer: random.New(),
+		//balancer: hash.New(),
 	}
 	for _, opt := range copts {
 		opt(&o)
@@ -154,6 +155,7 @@ func ClientHTTPOptions(copts ...ClientOption) []http.ClientOption {
 		m:        []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
 		balancer: p2c.New(nil),
 		//balancer: random.New(),
+		//balancer: hash.New(),
 	}
 	for _, opt := range copts {
 		opt(&o)

@@ -46,4 +46,4 @@ require (
 	nhooyr.io/websocket v1.8.7 // indirect
 )
 
-replace github.com/go-kratos/kratos/v2 v2.0.0-rc6 => github.com/go-kratos/kratos/v2 v2.0.0-20210624100455-07f9fa3e91db
+replace github.com/go-kratos/kratos/v2 v2.0.0-rc6 => github.com/go-kratos/kratos/v2 v2.0.0-20210625101857-953c91d3544e

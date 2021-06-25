@@ -46,7 +46,7 @@ type Instance struct {
 	// 服务实例所属地域
 	Region string `json:"region"`
 	// 服务实例可访问的ip地址
-	Host string `json:"addrs"`
+	Host string `json:"host"`
 	// 协议端口
 	Port int `json:"port"`
 	// 服务实例标签元信息,比如appVersion、group、weight等
