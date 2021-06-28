@@ -44,7 +44,7 @@ func genAPIMeta(md map[string]string, srv *openapiv2.Service, serviceName string
 				}
 			}
 		} else if err != nil {
-			log.DefaultLog.Errorf("ListServicesOpenAPI failed!err:=%v", serviceName, err)
+			log.DefaultLog.Errorf("ListServicesOpenAPI %s failed!err:=%v", serviceName, err)
 		}
 	}
 	if httpAPIMeta != "" {

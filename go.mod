@@ -7,7 +7,7 @@ require (
 	github.com/fullstorydev/grpcurl v1.8.1
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-kratos/kratos/v2 v2.0.0-rc6
-	github.com/go-kratos/swagger-api v0.1.4
+	github.com/go-kratos/swagger-api v0.1.5
 	github.com/go-playground/validator/v10 v10.6.1 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.0.3 // indirect
