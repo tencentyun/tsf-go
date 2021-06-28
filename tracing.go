@@ -117,7 +117,11 @@ func tracingClient(opts ...ClientOption) middleware.Middleware {
 					localAddr = u.Host
 				}
 				k, _ := kratos.FromContext(ctx)
-				span.SetAttributes(attribute.String("local.service", k.Name()))
+				var serviceName string
+				if k != nil {
+					serviceName = k.Name()
+				}
+				span.SetAttributes(attribute.String("local.service", serviceName))
 				localIP, localPort := util.ParseAddr(localAddr)
 				span.SetAttributes(attribute.String("local.ip", localIP))
 				span.SetAttributes(attribute.Int64("local.port", int64(localPort)))

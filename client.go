@@ -36,6 +36,13 @@ type clientOpionts struct {
 	breakerErrorHook func(ctx context.Context, operation string, err error) (success bool)
 	m                []middleware.Middleware
 	balancer         balancer.Balancer
+	enableDiscovery  bool
+}
+
+func WithEnableDiscovery(enableDiscovery bool) ClientOption {
+	return func(o *clientOpionts) {
+		o.enableDiscovery = enableDiscovery
+	}
 }
 
 func WithTracerOpts(opts ...tracing.Option) ClientOption {
@@ -68,9 +75,12 @@ func startClientContext(ctx context.Context, remoteServiceName string, l *lane.L
 		{Key: meta.DestKey(meta.ServiceName), Value: remoteServiceName},
 		{Key: meta.DestKey(meta.ServiceNamespace), Value: env.NamespaceID()},
 	}
+	var serviceName string
 	// 注入自己的服务名
 	k, _ := kratos.FromContext(ctx)
-	serviceName := k.Name()
+	if k != nil {
+		serviceName = k.Name()
+	}
 	if res := meta.Sys(ctx, meta.ServiceName); res == nil {
 		pairs = append(pairs, meta.SysPair{Key: meta.ServiceName, Value: serviceName})
 	} else {
@@ -130,8 +140,9 @@ func ClientMiddleware() middleware.Middleware {
 
 func ClientGrpcOptions(copts ...ClientOption) []tgrpc.ClientOption {
 	var o clientOpionts = clientOpionts{
-		m:        []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
-		balancer: p2c.New(nil),
+		m:               []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
+		enableDiscovery: true,
+		balancer:        p2c.New(nil),
 		//balancer: random.New(),
 		//balancer: hash.New(),
 	}
@@ -145,15 +156,18 @@ func ClientGrpcOptions(copts ...ClientOption) []tgrpc.ClientOption {
 	opts = []tgrpc.ClientOption{
 		tgrpc.WithOptions(grpc.WithBalancerName(o.balancer.Schema()), grpc.WithStatsHandler(&tracing.ClientHandler{})),
 		tgrpc.WithMiddleware(o.m...),
-		tgrpc.WithDiscovery(consul.DefaultConsul()),
+	}
+	if o.enableDiscovery {
+		opts = append(opts, tgrpc.WithDiscovery(consul.DefaultConsul()))
 	}
 	return opts
 }
 
 func ClientHTTPOptions(copts ...ClientOption) []http.ClientOption {
 	var o clientOpionts = clientOpionts{
-		m:        []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
-		balancer: p2c.New(nil),
+		m:               []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
+		enableDiscovery: true,
+		balancer:        p2c.New(nil),
 		//balancer: random.New(),
 		//balancer: hash.New(),
 	}
@@ -165,7 +179,9 @@ func ClientHTTPOptions(copts ...ClientOption) []http.ClientOption {
 	opts = []http.ClientOption{
 		http.WithBalancer(httpMulti.New(composite.DefaultComposite(), o.balancer)),
 		http.WithMiddleware(o.m...),
-		http.WithDiscovery(consul.DefaultConsul()),
+	}
+	if o.enableDiscovery {
+		opts = append(opts, http.WithDiscovery(consul.DefaultConsul()))
 	}
 	return opts
 }

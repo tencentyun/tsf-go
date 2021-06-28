@@ -12,3 +12,5 @@ examples/helloworld/grpc/consumer/consumer
 examples/helloworld/grpc/provider/provider
 examples/helloworld/http/consumer/consumer
 examples/helloworld/http/provider/provider
+examples/error/consumer/consumer
+examples/error/provider/provider

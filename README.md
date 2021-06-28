@@ -1,9 +1,9 @@
 
-tsf go 为用户现存的 Go 应用提供了接入TSF治理平台的 SDK 插件
+tsf-go基于开源[go-kratos](https://github.com/go-kratos/kratos)框架为用户现存的 Go 应用提供了接入TSF（[腾讯云微服务治理平台](https://cloud.tencent.com/document/product/649)）治理平台的SDK插件
 
 # 功能特性
 - 自动集成 TSF 平台治理能力：分布式远程配置、远程日志、分布式调用链追踪、监控、服务鉴权、服务路由、全链路灰度发布、API 自动上报。
-- 同时支持 gRPC 和 HTTP 双协议，可以和JAVA Spring Cloud 服务互相调用。
+- 同时支持 gRPC 和 HTTP 协议，可以和JAVA Spring Cloud 服务互相调用。
 - 组件化，方便自定义扩展和插拔。
 - API 规范化，API 协议使用 Protobuf 定义接口，并且 Errors 通过 Enum 作为错误码，以实现错误判定。
   
@@ -21,7 +21,7 @@ go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
 go get -u github.com/go-kratos/kratos/cmd/protoc-gen-go-http
 ## 服务端开发
 #### 1.通过protobuf定义服务接口
-```
+```protobuf
 syntax = "proto3";
 
 // 定义protobuf包名pacakage_name
@@ -63,7 +63,7 @@ message HelloReply {
 --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. *.proto`
 
 #### 3.编写service实现层代码
-```
+```go
 import	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 
 // server is used to implement helloworld.GreeterServer.
@@ -77,7 +77,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 }
 ```
 #### 4.编写server(grpc协议)启动入口main.go
-```
+```go
 import  pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 import 	tsf "github.com/tencentyun/tsf-go"
 import  "github.com/go-kratos/kratos/v2"
@@ -115,11 +115,11 @@ func main() {
 }
 ```
 ### 5.服务启动
-- 参考[腾讯云文档](https://cloud.tencent.com/document/product/649/16618)搭建并启动一个本地轻量级consul注册中心；如果暂时不想启动服务发现，则可以在第4步骤中将`opts = append(opts, tsf.AppOptions()...)`这行代码删除即可
+- 参考[腾讯云文档](https://cloud.tencent.com/document/product/649/16618)搭建并启动一个本地轻量级consul注册中心；如果暂时不想启动服务注册直接调试，则可以在第4步骤中传入`tsf.EnableReigstry(false)`即：`opts = append(opts, tsf.AppOptions(tsf.EnableReigstry(false))...)`
 - 执行`go run main.go`即可启动server
 ## 客户端开发（grpc协议）
 ### 1.编写客户端代码
-```
+```go
 import  pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 import  tsf "github.com/tencentyun/tsf-go"
 import 	"github.com/go-kratos/kratos/v2/transport/grpc"
@@ -152,7 +152,7 @@ func main() {
 参考文档[TSF应用管理](https://cloud.tencent.com/document/product/649/56145)创建应用并开通镜像仓库
 
 #### 2. 编写 Dockerfile
-```
+```dockerfile
 FROM centos:7
 
 RUN echo "ip_resolve=4" >> /etc/yum.conf

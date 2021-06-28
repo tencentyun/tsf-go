@@ -62,7 +62,7 @@ func newZap() *zap.Logger {
 				CallerKey:      "caller",
 				FunctionKey:    zapcore.OmitKey,
 				MessageKey:     "msg",
-				StacktraceKey:  "stacktrace",
+				StacktraceKey:  "",
 				LineEnding:     zapcore.DefaultLineEnding,
 				EncodeLevel:    zapcore.CapitalLevelEncoder,
 				EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.999"),

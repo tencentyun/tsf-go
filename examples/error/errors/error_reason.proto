@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package helloworld;
+
+// import third party proto
+import "errors/errors.proto";
+
+option go_package = "github.com/tencentyun/tsf-go/examples/error/errors";
+
+enum ErrorReason {
+  // 设置缺省错误码
+  option (errors.default_code) = 500;
+  
+  // 为某个枚举单独设置错误码
+  USER_NOT_FOUND = 0 [(errors.code) = 404];
+
+  CONTENT_MISSING = 1 [(errors.code) = 400];;
+}

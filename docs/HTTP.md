@@ -2,7 +2,7 @@
 ## 服务端开发
 #### 1.通过protobuf定义HTTP服务接口
 这里使用[gogleapis规范](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto#L46)定义的option来描述http接口，完整的示例可以参考[a_bit_of_everything.proto](https://github.com/grpc-ecosystem/grpc-gateway/blob/master/examples/internal/proto/examplepb/a_bit_of_everything.proto)
-```
+```protobuf
 syntax = "proto3";
 
 // 定义protobuf包名pacakage_name
@@ -49,7 +49,7 @@ message HelloReply {
 --go_out=paths=source_relative:. --go-http_out=paths=source_relative:.  *.proto`
 如果没有定义google.api.http，但仍想生成xxx_http.pb.go代码，则生成时需要加上参数--go-http_opt=omitempty=false
 #### 3.编写service实现层代码
-```
+```go
 import	pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 
 // server is used to implement helloworld.GreeterServer.
@@ -63,7 +63,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 }
 ```
 #### 4.编写server(http协议)启动入口main.go
-```
+```go
 import  pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 import 	tsf "github.com/tencentyun/tsf-go"
 import  "github.com/go-kratos/kratos/v2"
@@ -97,7 +97,7 @@ func main() {
 
 ## 客户端开发（http协议）
 ### 1.编写客户端代码
-```
+```go
 import  pb "github.com/tencentyun/tsf-go/examples/helloworld/proto"
 import  tsf "github.com/tencentyun/tsf-go"
 import 	"github.com/go-kratos/kratos/v2/transport/grpc"
