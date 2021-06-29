@@ -69,6 +69,12 @@ func WithMiddlewares(m ...middleware.Middleware) ClientOption {
 	}
 }
 
+func WithBalancer(b balancer.Balancer) ClientOption {
+	return func(o *clientOpionts) {
+		o.balancer = b
+	}
+}
+
 func startClientContext(ctx context.Context, remoteServiceName string, l *lane.Lane, operation string) context.Context {
 	// 注入远端服务名
 	pairs := []meta.SysPair{

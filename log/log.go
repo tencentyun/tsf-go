@@ -25,30 +25,42 @@ const (
 	LevelFatal
 )
 
-type Option func(t *tsfLogger)
+type Option func(t *options)
 
 func WithLevel(l Level) Option {
-	return func(t *tsfLogger) {
+	return func(t *options) {
 		t.level = l
 	}
 }
 
 func WithZap(logger *zap.Logger) Option {
-	return func(t *tsfLogger) {
+	return func(t *options) {
 		t.logger = logger
+	}
+}
+
+func WithPath(path string) Option {
+	return func(t *options) {
+		t.path = path
+	}
+}
+
+func WithTrace(enable bool) Option {
+	return func(t *options) {
+		t.traceEnable = enable
 	}
 }
 
 var (
 	// DefaultLog is default tsf logger
-	DefaultLogger log.Logger  = NewLogger()
+	DefaultLogger log.Logger  = NewLogger(WithTrace(true), WithPath(env.LogPath()), WithLevel(Level(env.LogLevel())))
 	DefaultLog    *log.Helper = log.NewHelper(DefaultLogger)
 )
 
-func newZap() *zap.Logger {
+func newZap(path string) *zap.Logger {
 	var zapLogger *zap.Logger
 	level := zap.NewAtomicLevelAt(zapcore.DebugLevel)
-	if env.LogPath() == "stdout" || env.LogPath() == "stderr" || env.LogPath() == "std" {
+	if path == "stdout" || path == "stderr" || path == "std" {
 		var err error
 		config := &zap.Config{
 			Level:       level,
@@ -92,7 +104,7 @@ func newZap() *zap.Logger {
 				CallerKey:      "caller",
 				FunctionKey:    zapcore.OmitKey,
 				MessageKey:     "msg",
-				StacktraceKey:  "stacktrace",
+				StacktraceKey:  "",
 				LineEnding:     zapcore.DefaultLineEnding,
 				EncodeLevel:    zapcore.CapitalLevelEncoder,
 				EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.999"),
@@ -107,23 +119,17 @@ func newZap() *zap.Logger {
 	return zapLogger
 }
 
+type options struct {
+	level       Level
+	logger      *zap.Logger
+	path        string
+	traceEnable bool
+}
+
 type tsfLogger struct {
 	level  Level
 	logger *zap.Logger
 	pool   *sync.Pool
-}
-
-// newTSFLogger new a logger with writer.
-func newTSFLogger() *tsfLogger {
-	return &tsfLogger{
-		logger: newZap(),
-		pool: &sync.Pool{
-			New: func() interface{} {
-				return new(bytes.Buffer)
-			},
-		},
-		level: Level(env.LogLevel()),
-	}
 }
 
 // Log print the kv pairs log.
@@ -177,11 +183,30 @@ func (l *tsfLogger) Log(level log.Level, keyvals ...interface{}) error {
 
 // NewLogger return tsf new logger
 func NewLogger(opts ...Option) log.Logger {
-	logger := newTSFLogger()
-	for _, opt := range opts {
-		opt(logger)
+	o := options{
+		level:       Level(env.LogLevel()),
+		path:        env.LogPath(),
+		traceEnable: true,
 	}
-	return log.With(logger, "trace", Trace())
+	for _, opt := range opts {
+		opt(&o)
+	}
+	if o.logger == nil {
+		o.logger = newZap(o.path)
+	}
+	logger := &tsfLogger{
+		logger: o.logger,
+		pool: &sync.Pool{
+			New: func() interface{} {
+				return new(bytes.Buffer)
+			},
+		},
+		level: o.level,
+	}
+	if o.traceEnable {
+		return log.With(logger, "trace", Trace())
+	}
+	return logger
 }
 
 // NewHelper return tsf new logger helper
