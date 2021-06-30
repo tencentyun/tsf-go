@@ -33,11 +33,18 @@ func EnableReigstry(enable bool) Option {
 	}
 }
 
+func Medata(metadata map[string]string) Option {
+	return func(a *appOptions) {
+		a.metadata = metadata
+	}
+}
+
 type appOptions struct {
 	protoService   string
 	srv            *grpc.Server
 	apiMeta        bool
 	enableReigstry bool
+	metadata       map[string]string
 }
 
 func APIMeta(enable bool) Option {
@@ -70,9 +77,20 @@ func Metadata(optFuncs ...Option) (opt kratos.Option) {
 		"TSF_NAMESPACE_ID":   env.NamespaceID(),
 		"TSF_SDK_VERSION":    version.GetHumanVersion(),
 	}
+	if len(opts.metadata) > 0 {
+		for k, v := range opts.metadata {
+			md[k] = v
+		}
+	}
 	if enableApiMeta {
 		apiSrv := openapiv2.New(opts.srv)
 		genAPIMeta(md, apiSrv, opts.protoService)
+	}
+
+	for k, v := range md {
+		if v == "" || k == "" {
+			delete(md, k)
+		}
 	}
 
 	opt = kratos.Metadata(md)

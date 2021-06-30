@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -144,10 +143,6 @@ func tracerProvider() (*tracesdk.TracerProvider, error) {
 		tracesdk.WithSampler(tracesdk.AlwaysSample()),
 		// Always be sure to batch in production.
 		tracesdk.WithBatcher(exp),
-		// Record information about this application in an Resource.
-		tracesdk.WithResource(resource.NewWithAttributes(
-			attribute.Int64("ID", 1),
-		)),
 	)
 	return tp, nil
 }
@@ -156,19 +151,19 @@ type Exporter struct {
 	logger *zap.Logger
 }
 
-func (e *Exporter) ExportSpans(ctx context.Context, ss []*tracesdk.SpanSnapshot) error {
+func (e *Exporter) ExportSpans(ctx context.Context, ss []tracesdk.ReadOnlySpan) error {
 	for _, s := range ss {
 		attrs := make(map[string]attribute.Value, 0)
-		for _, attr := range s.Attributes {
+		for _, attr := range s.Attributes() {
 			attrs[string(attr.Key)] = attr.Value
 		}
 		span := Span{
-			TraceID:   s.SpanContext.TraceID().String(),
-			ID:        s.SpanContext.SpanID().String(),
-			Kind:      strings.ToUpper(s.SpanKind.String()),
-			Name:      s.Name,
-			Timestamp: s.StartTime.UnixNano() / 1000,
-			Duration:  int64(s.EndTime.Sub(s.StartTime)) / 1000,
+			TraceID:   s.SpanContext().TraceID().String(),
+			ID:        s.SpanContext().SpanID().String(),
+			Kind:      strings.ToUpper(s.SpanKind().String()),
+			Name:      s.Name(),
+			Timestamp: s.StartTime().UnixNano() / 1000,
+			Duration:  int64(s.EndTime().Sub(s.StartTime())) / 1000,
 			LocalEndpoint: &Endpoint{
 				ServiceName: attrs["local.service"].AsString(),
 				IPv4:        attrs["local.ip"].AsString(),
@@ -181,11 +176,11 @@ func (e *Exporter) ExportSpans(ctx context.Context, ss []*tracesdk.SpanSnapshot)
 			},
 			Tags: map[string]string{},
 		}
-		if s.Parent.HasSpanID() {
-			span.ParentID = s.Parent.SpanID().String()
+		if s.Parent().HasSpanID() {
+			span.ParentID = s.Parent().SpanID().String()
 		}
 		if v, ok := attrs["annotations"]; ok {
-			span.Annotations = append(span.Annotations, Annotation{Timestamp: s.StartTime.UnixNano() / 1000, Value: v.AsString()})
+			span.Annotations = append(span.Annotations, Annotation{Timestamp: s.StartTime().UnixNano() / 1000, Value: v.AsString()})
 		}
 		delete(attrs, "local.service")
 		delete(attrs, "local.ip")

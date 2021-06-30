@@ -9,3 +9,14 @@ type Metadata struct {
 	LocalIP            string `json:"li"`
 	NamespaceID        string `json:"ni"`
 }
+
+type AtomMetadata struct {
+	ApplicationID string `json:"application.id"`
+	ServiceName   string `json:"service.name"`
+	InstanceID    string `json:"instance.id"`
+	GroupID       string `json:"group.id"`
+	LocalIP       string `json:"connection.ip"`
+	LocalPort     string `json:"service.port"`
+	NamespaceID   string `json:"namespace.id"`
+	Interface     string `json:"interface"`
+}

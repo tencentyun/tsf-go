@@ -69,6 +69,23 @@ func startServerContext(ctx context.Context, serviceName string, method string, 
 			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.GroupID), Value: tsfMeta.GroupID})
 			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ConnnectionIP), Value: tsfMeta.LocalIP})
 			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.Namespace), Value: tsfMeta.NamespaceID})
+		} else if key == "_st" {
+			var tsfMeta tsfHttp.AtomMetadata
+			e := json.Unmarshal([]byte(val), &tsfMeta)
+			if e != nil {
+				v, e := url.QueryUnescape(val)
+				if e == nil {
+					e = json.Unmarshal([]byte(v), &tsfMeta)
+				} else {
+					log.DefaultLog.Infow("msg", "grpc http parse header TSF-Metadata failed!", "meta", v, "err", e)
+				}
+			}
+			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.Interface), Value: tsfMeta.Interface})
+			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ApplicationID), Value: tsfMeta.ApplicationID})
+			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ServiceName), Value: tsfMeta.ServiceName})
+			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.GroupID), Value: tsfMeta.GroupID})
+			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.ConnnectionIP), Value: tsfMeta.LocalIP})
+			sysPairs = append(sysPairs, meta.SysPair{Key: meta.SourceKey(meta.Namespace), Value: tsfMeta.NamespaceID})
 		} else if key == "tsf-tags" {
 			var tags []map[string]interface{} = make([]map[string]interface{}, 0)
 			e := json.Unmarshal([]byte(val), &tags)

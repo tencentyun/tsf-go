@@ -54,7 +54,7 @@ func tracingServer(opts ...ServerOption) middleware.Middleware {
 				}
 
 				var span trace.Span
-				ctx, span = tracer.Start(ctx, tr.Kind().String(), operation, tr.Header())
+				ctx, span = tracer.Start(ctx, tr.Kind().String(), operation, tr.RequestHeader())
 				span.SetAttributes(attribute.String("localComponent", tr.Kind().String()))
 				k, _ := kratos.FromContext(ctx)
 				span.SetAttributes(attribute.String("local.service", k.Name()))
@@ -106,7 +106,7 @@ func tracingClient(opts ...ClientOption) middleware.Middleware {
 					}
 				}
 				var span trace.Span
-				ctx, span = tracer.Start(ctx, tr.Kind().String(), operation, tr.Header())
+				ctx, span = tracer.Start(ctx, tr.Kind().String(), operation, tr.RequestHeader())
 
 				span.SetAttributes(attribute.String("remoteComponent", tr.Kind().String()))
 				var localAddr string

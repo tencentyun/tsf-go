@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package atom;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/tencentyun/tsf-go/examples/atom/proto";
+
+// The greeting service definition.
+service Greeter {
+  // Sends a greeting
+  rpc Hello (google.protobuf.Empty) returns (HelloReply)  {
+        option (google.api.http) = {
+            get: "/hello",
+            additional_bindings {
+				post: "/hello"
+			},
+			additional_bindings {
+				put: "/hello"
+			},
+			additional_bindings {
+				delete: "/hello"
+			},
+			additional_bindings {
+				patch: "/hello"
+			},
+        };
+    }
+
+    rpc Echo(EchoRequest) returns (EchoReply){
+        option (google.api.http) = {
+            get: "/echo/{param}",
+        };
+    }
+
+    rpc EchoError(EchoRequest) returns (EchoReply){
+        option (google.api.http) = {
+            get: "/echo/error/{param}",
+        };
+    }
+
+    rpc EchoSlow(EchoRequest) returns (EchoReply){
+        option (google.api.http) = {
+            get: "/echo/slow/{param}",
+        };
+    }
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}
+
+message EchoRequest{
+    string param = 1;
+}
+
+message EchoReply {
+    string param = 1;
+    string applicationName = 2;
+    string sleepTime = 3;
+}
