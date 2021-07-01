@@ -6,7 +6,7 @@ import 	"github.com/tencentyun/tsf-go/tracing"
 // 设置采样率为100%
 tracing.SetProvider(tracing.WithSampleRatio(1.0))
 ```
-2. 自定义trace span输出（默认以zipkin协议格式输出至/data/tsf_apm/trace/log/trace_log.log）
+2. 自定义trace span输出（tsf默认以zipkin协议格式输出至/data/tsf_apm/trace/log/trace_log.log）
 ```go
 import 	"github.com/tencentyun/tsf-go/tracing"
 
@@ -25,7 +25,17 @@ func (e exporter) Shutdown(ctx context.Context) error {
 // 设置span exporter
 tracing.SetProvider(tracing.WithTracerExporter(exporter{}))
 ```
-3. Redis\Mysql tracing支持
+3. 替换Trace Propagator协议（tsf默认使用zipkin b3协议进行Header传播、解析）
+```go
+import 	"go.opentelemetry.io/otel"
+import 	"go.opentelemetry.io/otel/propagation"
+
+// 可以通过SetTextMapPropagator替换
+// 比如这里替换成W3C Trace Context标准格式
+// https://www.w3.org/TR/trace-context/
+otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
+``` 
+4. Redis\Mysql tracing支持
 ```go
 import 	"database/sql"
 
