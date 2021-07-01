@@ -2,10 +2,13 @@ package tsf
 
 import (
 	"context"
+	"net/url"
 
+	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/tencentyun/tsf-go/gin"
+	"github.com/tencentyun/tsf-go/util"
 )
 
 func ServerOperation(ctx context.Context) (method string, operation string) {
@@ -36,5 +39,23 @@ func ClientOperation(ctx context.Context) (method string, operation string) {
 			}
 		}
 	}
+	return
+}
+
+func LocalEndpoint(ctx context.Context) (local struct {
+	Service string
+	IP      string
+	Port    uint16
+}) {
+	k, _ := kratos.FromContext(ctx)
+	if k != nil {
+		local.Service = k.Name()
+	}
+	var localAddr string
+	if tr, ok := transport.FromServerContext(ctx); ok {
+		u, _ := url.Parse(tr.Endpoint())
+		localAddr = u.Host
+	}
+	local.IP, local.Port = util.ParseAddr(localAddr)
 	return
 }

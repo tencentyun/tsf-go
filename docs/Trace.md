@@ -1,3 +1,51 @@
 链路追踪
-tsf-go已自动集成CNCF Opentelemery(opentracing协议)的链路追踪sdk，默认会10%采样tracing数据
-1.自定义Tracer Provider：
+tsf-go已自动集成Opentelemery SDK(opentracing协议)，同时会上报给TSF 调用链追踪平台，默认10%采样率
+1. 自定义采样率：
+```go
+import 	"github.com/tencentyun/tsf-go/tracing"
+// 设置采样率为100%
+tracing.SetProvider(tracing.WithSampleRatio(1.0))
+```
+2. 自定义trace span输出（默认以zipkin协议格式输出至/data/tsf_apm/trace/log/trace_log.log）
+```go
+import 	"github.com/tencentyun/tsf-go/tracing"
+
+type exporter struct {
+}
+
+func (e exporter) ExportSpans(ctx context.Context, ss []tracesdk.ReadOnlySpan) error {
+   //输出至stdout
+   fmt.Println(ss)
+}
+
+func (e exporter) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+// 设置span exporter
+tracing.SetProvider(tracing.WithTracerExporter(exporter{}))
+```
+3. Redis\Mysql tracing支持
+```go
+import 	"database/sql"
+
+import 	"github.com/go-sql-driver/mysql"
+import 	"github.com/go-redis/redis/v8"
+import 	"github.com/luna-duclos/instrumentedsql"
+import 	"github.com/tencentyun/tsf-go/tracing/mysqlotel"
+import	"github.com/tencentyun/tsf-go/tracing/redisotel"
+
+// 添加redis tracing hook
+redisClient.AddHook(redisotel.New("127.0.0.1:6379"))
+
+
+// 注册mysql的tracing instrument
+sql.Register("tracing-mysql",
+    instrumentedsql.WrapDriver(mysql.MySQLDriver{},
+        instrumentedsql.WithTracer(mysqlotel.NewTracer("127.0.0.1:3306")),
+        instrumentedsql.WithOmitArgs(),
+    ),
+)
+db, err := sql.Open("tracing-mysql", "root:123456@tcp(127.0.0.1:3306)/pie")
+```
+具体使用方式参考[tracing examples](/examples/tracing)中范例代码

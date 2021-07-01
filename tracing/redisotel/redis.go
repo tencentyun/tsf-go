@@ -2,9 +2,10 @@ package redisotel
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
+
+	tsf "github.com/tencentyun/tsf-go"
 
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-redis/redis/extra/rediscmd"
@@ -32,13 +33,15 @@ var _ redis.Hook = RedisHook{}
 
 func (rh RedisHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
 	if !trace.SpanFromContext(ctx).IsRecording() {
-		fmt.Println("redis not recoding!")
-
 		return ctx, nil
 	}
-	fmt.Println("redis in!")
+	localEndpoint := tsf.LocalEndpoint(ctx)
 
 	ctx, span := rh.tracer.Start(ctx, cmd.FullName(), trace.WithSpanKind(trace.SpanKindClient))
+	span.SetAttributes(attribute.String("local.ip", localEndpoint.IP))
+	span.SetAttributes(attribute.Int64("local.port", int64(localEndpoint.Port)))
+	span.SetAttributes(attribute.String("local.service", localEndpoint.Service))
+
 	span.SetAttributes(attribute.String("peer.ip", rh.ip))
 	span.SetAttributes(attribute.Int64("peer.port", int64(rh.port)))
 	span.SetAttributes(attribute.String("peer.service", "redis-server"))

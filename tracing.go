@@ -101,22 +101,15 @@ func tracingClient() middleware.Middleware {
 				ctx, span = tracer.Start(ctx, tr.Kind().String(), operation, tr.RequestHeader())
 
 				span.SetAttributes(attribute.String("remoteComponent", tr.Kind().String()))
-				var localAddr string
 				if str, ok := transport.FromServerContext(ctx); ok {
 					span.SetAttributes(attribute.String("localComponent", str.Kind().String()))
 					span.SetAttributes(attribute.String("localInterface", str.Operation()))
-					u, _ := url.Parse(str.Endpoint())
-					localAddr = u.Host
 				}
-				k, _ := kratos.FromContext(ctx)
-				var serviceName string
-				if k != nil {
-					serviceName = k.Name()
-				}
-				span.SetAttributes(attribute.String("local.service", serviceName))
-				localIP, localPort := util.ParseAddr(localAddr)
-				span.SetAttributes(attribute.String("local.ip", localIP))
-				span.SetAttributes(attribute.Int64("local.port", int64(localPort)))
+
+				localEndpoint := LocalEndpoint(ctx)
+				span.SetAttributes(attribute.String("local.service", localEndpoint.Service))
+				span.SetAttributes(attribute.String("local.ip", localEndpoint.IP))
+				span.SetAttributes(attribute.Int64("local.port", int64(localEndpoint.Port)))
 
 				remoteService, _ := util.ParseTarget(tr.Endpoint())
 				span.SetAttributes(attribute.String("peer.service", remoteService))
