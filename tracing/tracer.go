@@ -94,7 +94,7 @@ func SetProvider(opts ...Option) {
 
 func init() {
 	SetProvider()
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagator{}))
 }
 
 // Tracer is otel span tracer
@@ -151,7 +151,7 @@ func (t *Tracer) End(ctx context.Context, span trace.Span, err error) {
 func tracerProvider(ratio float64, exporter tracesdk.SpanExporter, r *resource.Resource) *tracesdk.TracerProvider {
 	opts := []tracesdk.TracerProviderOption{
 		// 默认采样率10%
-		tracesdk.WithSampler(tracesdk.TraceIDRatioBased(ratio)),
+		tracesdk.WithSampler(tracesdk.ParentBased(tracesdk.TraceIDRatioBased(ratio))),
 		// Always be sure to batch in production.
 		tracesdk.WithBatcher(exporter),
 	}

@@ -51,8 +51,10 @@ func main() {
 	logger := log.DefaultLogger
 	log := log.NewHelper(logger)
 
-	// 主动设置trace采样率为100%，如果不设置默认为10%
-	tracing.SetProvider(tracing.WithSampleRatio(1.0))
+	// 主动设置trace采样率为30%
+	// 如果上游parent span中设置了是否采样，则以上游span为准，忽略采样率设置
+	// 在这个example中，由于consumer采样率设置了100%，所以provider实际采样率也为100%
+	tracing.SetProvider(tracing.WithSampleRatio(0.3))
 	// 初始化redis client
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:         "127.0.0.1:6379",

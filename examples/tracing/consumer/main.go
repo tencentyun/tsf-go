@@ -14,7 +14,8 @@ import (
 
 func main() {
 	flag.Parse()
-	// 设置采样率
+	// 将tracing采样率提升至100%
+	// 如果不设置，默认为10%
 	tracing.SetProvider(tracing.WithSampleRatio(1.0))
 	go func() {
 		for {

@@ -44,7 +44,6 @@ func newService(c *consul.Consul) {
 		http.Address("0.0.0.0:8080"),
 		http.Middleware(
 			recovery.Recovery(),
-			// 将tracing采样率提升至100%
 			tsf.ServerMiddleware(),
 			logging.Server(logger),
 		),

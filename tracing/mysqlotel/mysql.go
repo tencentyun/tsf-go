@@ -2,7 +2,6 @@ package mysqlotel
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -43,7 +42,6 @@ type Span struct {
 }
 
 func (s Span) NewChild(name string) instrumentedsql.Span {
-	fmt.Println("name:", name, "span:", s.span)
 	if !trace.SpanFromContext(s.ctx).IsRecording() {
 		return Span{}
 	}
