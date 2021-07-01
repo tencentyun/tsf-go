@@ -2,20 +2,16 @@ package tracing
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/tencentyun/tsf-go/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
 )
 
 // Annotation associates an event that explains latency with a timestamp.
@@ -54,22 +50,51 @@ type Span struct {
 type Option func(*options)
 
 type options struct {
-	TracerProvider trace.TracerProvider
-	Propagators    propagation.TextMapPropagator
+	sampleRatio float64
+	exporter    tracesdk.SpanExporter
+	r           *resource.Resource
 }
 
-// WithPropagators with tracer proagators.
-func WithPropagators(propagators propagation.TextMapPropagator) Option {
+// WithTracerExporter with tracer exporter.
+func WithTracerExporter(exporter tracesdk.SpanExporter) Option {
 	return func(opts *options) {
-		opts.Propagators = propagators
+		opts.exporter = exporter
 	}
 }
 
-// WithTracerProvider with tracer privoder.
-func WithTracerProvider(provider trace.TracerProvider) Option {
+// WithResource with tracer resource.
+func WithResource(r *resource.Resource) Option {
 	return func(opts *options) {
-		opts.TracerProvider = provider
+		opts.r = r
 	}
+}
+
+// WithSampleRatio samples a given fraction of traces. Fractions >= 1 will
+// always sample. Fractions < 0 are treated as zero. To respect the
+// parent trace's `SampledFlag`, the `TraceIDRatioBased` sampler should be used
+// as a delegate of a `Parent` sampler.
+func WithSampleRatio(sampleRatio float64) Option {
+	return func(opts *options) {
+		opts.sampleRatio = sampleRatio
+	}
+}
+
+// SetProvider set otel global provider
+func SetProvider(opts ...Option) {
+	options := options{
+		sampleRatio: 0.1,
+		exporter:    &Exporter{defaultLogger},
+	}
+	for _, o := range opts {
+		o(&options)
+	}
+	tp := tracerProvider(options.sampleRatio, options.exporter, options.r)
+	otel.SetTracerProvider(tp)
+}
+
+func init() {
+	SetProvider()
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
 }
 
 // Tracer is otel span tracer
@@ -79,21 +104,7 @@ type Tracer struct {
 }
 
 // NewTracer create tracer instance
-func NewTracer(kind trace.SpanKind, opts ...Option) (*Tracer, error) {
-	tp, err := tracerProvider()
-	if err != nil {
-		log.DefaultLog.Errorf("new tsf tracer failed!err:=%v", err)
-		return nil, err
-	}
-	options := options{
-		TracerProvider: tp,
-		Propagators:    propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}),
-	}
-	for _, o := range opts {
-		o(&options)
-	}
-	otel.SetTracerProvider(options.TracerProvider)
-	otel.SetTextMapPropagator(options.Propagators)
+func NewTracer(kind trace.SpanKind) (*Tracer, error) {
 	switch kind {
 	case trace.SpanKindClient:
 		return &Tracer{tracer: otel.Tracer("CLIENT"), kind: kind}, nil
@@ -137,74 +148,16 @@ func (t *Tracer) End(ctx context.Context, span trace.Span, err error) {
 }
 
 // Get trace provider
-func tracerProvider() (*tracesdk.TracerProvider, error) {
-	exp := &Exporter{defaultLogger}
-	tp := tracesdk.NewTracerProvider(
-		tracesdk.WithSampler(tracesdk.AlwaysSample()),
+func tracerProvider(ratio float64, exporter tracesdk.SpanExporter, r *resource.Resource) *tracesdk.TracerProvider {
+	opts := []tracesdk.TracerProviderOption{
+		// 默认采样率10%
+		tracesdk.WithSampler(tracesdk.TraceIDRatioBased(ratio)),
 		// Always be sure to batch in production.
-		tracesdk.WithBatcher(exp),
-	)
-	return tp, nil
-}
-
-type Exporter struct {
-	logger *zap.Logger
-}
-
-func (e *Exporter) ExportSpans(ctx context.Context, ss []tracesdk.ReadOnlySpan) error {
-	for _, s := range ss {
-		attrs := make(map[string]attribute.Value, 0)
-		for _, attr := range s.Attributes() {
-			attrs[string(attr.Key)] = attr.Value
-		}
-		span := Span{
-			TraceID:   s.SpanContext().TraceID().String(),
-			ID:        s.SpanContext().SpanID().String(),
-			Kind:      strings.ToUpper(s.SpanKind().String()),
-			Name:      s.Name(),
-			Timestamp: s.StartTime().UnixNano() / 1000,
-			Duration:  int64(s.EndTime().Sub(s.StartTime())) / 1000,
-			LocalEndpoint: &Endpoint{
-				ServiceName: attrs["local.service"].AsString(),
-				IPv4:        attrs["local.ip"].AsString(),
-				Port:        uint16(attrs["local.port"].AsInt64()),
-			},
-			RemoteEndpoint: &Endpoint{
-				ServiceName: attrs["peer.service"].AsString(),
-				IPv4:        attrs["peer.ip"].AsString(),
-				Port:        uint16(attrs["peer.port"].AsInt64()),
-			},
-			Tags: map[string]string{},
-		}
-		if s.Parent().HasSpanID() {
-			span.ParentID = s.Parent().SpanID().String()
-		}
-		if v, ok := attrs["annotations"]; ok {
-			span.Annotations = append(span.Annotations, Annotation{Timestamp: s.StartTime().UnixNano() / 1000, Value: v.AsString()})
-		}
-		delete(attrs, "local.service")
-		delete(attrs, "local.ip")
-		delete(attrs, "local.port")
-		delete(attrs, "peer.service")
-		delete(attrs, "peer.ip")
-		delete(attrs, "peer.port")
-		for k, v := range attrs {
-			if v.Type() == attribute.STRING {
-				span.Tags[k] = v.AsString()
-			} else if v.Type() == attribute.INT64 {
-				span.Tags[k] = strconv.FormatInt(v.AsInt64(), 10)
-			}
-		}
-		content, err := json.Marshal(span)
-		if err != nil {
-			log.DefaultLog.Errorf("tsfReporter Marshal failed!%v %s", span, err)
-			continue
-		}
-		e.logger.Info(string(content))
+		tracesdk.WithBatcher(exporter),
 	}
-	return nil
-}
-
-func (e *Exporter) Shutdown(ctx context.Context) error {
-	return nil
+	if r != nil {
+		opts = append(opts, tracesdk.WithResource(r))
+	}
+	tp := tracesdk.NewTracerProvider(opts...)
+	return tp
 }

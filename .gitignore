@@ -14,3 +14,5 @@ examples/helloworld/http/consumer/consumer
 examples/helloworld/http/provider/provider
 examples/error/consumer/consumer
 examples/error/provider/provider
+examples/tracing/consumer/consumer
+examples/tracing/provider/provider

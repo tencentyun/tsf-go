@@ -19,12 +19,8 @@ import (
 )
 
 // tracingServer returns a new server middleware for OpenTelemetry.
-func tracingServer(opts ...ServerOption) middleware.Middleware {
-	var o serverOpionts
-	for _, opt := range opts {
-		opt(&o)
-	}
-	tracer, e := tracing.NewTracer(trace.SpanKindServer, o.tracerOpts...)
+func tracingServer() middleware.Middleware {
+	tracer, e := tracing.NewTracer(trace.SpanKindServer)
 	if e != nil {
 		panic(e)
 	}
@@ -83,12 +79,8 @@ func tracingServer(opts ...ServerOption) middleware.Middleware {
 }
 
 // tracingClient returns a new client middleware for OpenTelemetry.
-func tracingClient(opts ...ClientOption) middleware.Middleware {
-	var o clientOpionts
-	for _, opt := range opts {
-		opt(&o)
-	}
-	tracer, e := tracing.NewTracer(trace.SpanKindClient, o.tracerOpts...)
+func tracingClient() middleware.Middleware {
+	tracer, e := tracing.NewTracer(trace.SpanKindClient)
 	if e != nil {
 		panic(e)
 	}

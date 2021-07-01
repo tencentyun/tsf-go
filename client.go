@@ -31,7 +31,6 @@ import (
 type ClientOption func(*clientOpionts)
 
 type clientOpionts struct {
-	tracerOpts       []tracing.Option
 	breakerCfg       *breaker.Config
 	breakerErrorHook func(ctx context.Context, operation string, err error) (success bool)
 	m                []middleware.Middleware
@@ -42,12 +41,6 @@ type clientOpionts struct {
 func WithEnableDiscovery(enableDiscovery bool) ClientOption {
 	return func(o *clientOpionts) {
 		o.enableDiscovery = enableDiscovery
-	}
-}
-
-func WithTracerOpts(opts ...tracing.Option) ClientOption {
-	return func(o *clientOpionts) {
-		o.tracerOpts = opts
 	}
 }
 
@@ -146,7 +139,7 @@ func ClientMiddleware() middleware.Middleware {
 
 func ClientGrpcOptions(copts ...ClientOption) []tgrpc.ClientOption {
 	var o clientOpionts = clientOpionts{
-		m:               []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
+		m:               []middleware.Middleware{clientMiddleware(), tracingClient(), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
 		enableDiscovery: true,
 		balancer:        p2c.New(nil),
 		//balancer: random.New(),
@@ -171,7 +164,7 @@ func ClientGrpcOptions(copts ...ClientOption) []tgrpc.ClientOption {
 
 func ClientHTTPOptions(copts ...ClientOption) []http.ClientOption {
 	var o clientOpionts = clientOpionts{
-		m:               []middleware.Middleware{clientMiddleware(), tracingClient(copts...), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
+		m:               []middleware.Middleware{clientMiddleware(), tracingClient(), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
 		enableDiscovery: true,
 		balancer:        p2c.New(nil),
 		//balancer: random.New(),

@@ -12,7 +12,6 @@ import (
 	"github.com/tencentyun/tsf-go/pkg/meta"
 	"github.com/tencentyun/tsf-go/pkg/sys/env"
 	"github.com/tencentyun/tsf-go/pkg/util"
-	"github.com/tencentyun/tsf-go/tracing"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/metadata"
@@ -25,13 +24,6 @@ import (
 type ServerOption func(*serverOpionts)
 
 type serverOpionts struct {
-	tracerOpts []tracing.Option
-}
-
-func TracerOpts(opts ...tracing.Option) ServerOption {
-	return func(o *serverOpionts) {
-		o.tracerOpts = opts
-	}
 }
 
 func startServerContext(ctx context.Context, serviceName string, method string, operation string, addr string) context.Context {
@@ -153,6 +145,6 @@ func serverMiddleware() middleware.Middleware {
 }
 
 // ServerMiddleware is a grpc server middleware.
-func ServerMiddleware() middleware.Middleware {
+func ServerMiddleware(opts ...ServerOption) middleware.Middleware {
 	return middleware.Chain(mmeta.Server(mmeta.WithPropagatedPrefix("")), serverMiddleware(), tracingServer(), serverMetricsMiddleware(), authMiddleware())
 }
