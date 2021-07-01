@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -94,7 +95,7 @@ func SetProvider(opts ...Option) {
 
 func init() {
 	SetProvider()
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagator{}))
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, b3.B3{}))
 }
 
 // Tracer is otel span tracer
