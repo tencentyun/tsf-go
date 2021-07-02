@@ -9,7 +9,7 @@ import (
 	"github.com/tencentyun/tsf-go/breaker"
 )
 
-func breakerMiddleware(opts ...ClientOption) middleware.Middleware {
+func BreakerMiddleware(opts ...ClientOption) middleware.Middleware {
 	var o clientOpionts
 	for _, opt := range opts {
 		opt(&o)

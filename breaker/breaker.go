@@ -20,7 +20,7 @@ type Config struct {
 	Bucket int
 	// 熔断触发临界请求量
 	// 统计窗口内请求量低于Request值则不触发熔断
-	// 默认值 50
+	// 默认值 20
 	Request int64
 }
 
@@ -77,7 +77,7 @@ var (
 	_conf = &Config{
 		Window:  time.Duration(3 * time.Second),
 		Bucket:  10,
-		Request: 100,
+		Request: 20,
 
 		// Percentage of failures must be lower than 33.33%
 		K: 1.5,

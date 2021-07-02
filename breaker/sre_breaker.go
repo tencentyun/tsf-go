@@ -72,7 +72,7 @@ func (b *sreBreaker) Allow() error {
 	drop := b.trueOnProba(dr)
 
 	if drop {
-		return errors.ServiceUnavailable(errors.UnknownReason, "circuit breaker is open")
+		return errors.ServiceUnavailable("circuit_breaker_open", "circuit breaker is open")
 	}
 	return nil
 }

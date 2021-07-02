@@ -58,7 +58,7 @@ func main() {
 	)
 	pb.RegisterGreeterHTTPServer(httpSrv, s)
 
-	opts := []kratos.Option{kratos.Name("provider-demo"), kratos.Server(httpSrv)}
+	opts := []kratos.Option{kratos.Name("provider-demo-go"), kratos.Server(httpSrv)}
 	opts = append(opts, tsf.AppOptions(tsf.Medata(AtomMetadata()))...)
 	app := kratos.New(opts...)
 

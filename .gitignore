@@ -16,3 +16,6 @@ examples/error/consumer/consumer
 examples/error/provider/provider
 examples/tracing/consumer/consumer
 examples/tracing/provider/provider
+examples/breaker/consumer/consumer
+examples/breaker/provider/provider
+examples/atom/provider/provider

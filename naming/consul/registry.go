@@ -105,6 +105,9 @@ func (c *Consul) register(ins *naming.Instance) (err error) {
 		},
 		Tags: ins.Tags,
 	}
+	/*for k, v := range ins.Metadata {
+		sd.Tags = append(sd.Tags, k+"="+v)
+	}*/
 	url := fmt.Sprintf("http://%s/v1/agent/service/register?token=%s", c.addr(), c.conf.Token)
 	if c.conf.NamespaceID != "" {
 		url += "&nid=" + c.conf.NamespaceID

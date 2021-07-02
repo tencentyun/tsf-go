@@ -18,7 +18,7 @@ func callHTTP() {
 	log := log.NewHelper(logger)
 
 	clientOpts := []http.ClientOption{http.WithEndpoint("127.0.0.1:8000")}
-	clientOpts = append(clientOpts, tsf.ClientHTTPOptions(tsf.WithEnableDiscovery(false))...)
+	clientOpts = append(clientOpts, tsf.ClientHTTPOptions()...)
 	httpConn, err := http.NewClient(context.Background(), clientOpts...)
 	if err != nil {
 		log.Fatalf("dial http err:%v", err)

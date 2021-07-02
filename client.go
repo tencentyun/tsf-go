@@ -139,7 +139,7 @@ func ClientMiddleware() middleware.Middleware {
 
 func ClientGrpcOptions(copts ...ClientOption) []tgrpc.ClientOption {
 	var o clientOpionts = clientOpionts{
-		m:               []middleware.Middleware{clientMiddleware(), tracingClient(), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
+		m:               []middleware.Middleware{clientMiddleware(), tracingClient(), clientMetricsMiddleware(), mmeta.Client()},
 		enableDiscovery: true,
 		balancer:        p2c.New(nil),
 		//balancer: random.New(),
@@ -164,7 +164,7 @@ func ClientGrpcOptions(copts ...ClientOption) []tgrpc.ClientOption {
 
 func ClientHTTPOptions(copts ...ClientOption) []http.ClientOption {
 	var o clientOpionts = clientOpionts{
-		m:               []middleware.Middleware{clientMiddleware(), tracingClient(), clientMetricsMiddleware(), breakerMiddleware(copts...), mmeta.Client()},
+		m:               []middleware.Middleware{clientMiddleware(), tracingClient(), clientMetricsMiddleware(), mmeta.Client()},
 		enableDiscovery: true,
 		balancer:        p2c.New(nil),
 		//balancer: random.New(),

@@ -1,11 +1,13 @@
 
-tsf-go基于开源[go-kratos](https://github.com/go-kratos/kratos)框架为用户现存的 Go 应用提供了接入TSF（[腾讯云微服务治理平台](https://cloud.tencent.com/document/product/649)）治理平台的SDK插件
+tsf-go基于开源[go-kratos](https://github.com/go-kratos/kratos)框架为用户现存的 Go 应用提供了接入TSF（[腾讯云微服务治理平台](https://cloud.tencent.com/document/product/649)）治理平台的能力。
 
 # 功能特性
 - 自动集成 TSF 平台治理能力：分布式远程配置、远程日志、分布式调用链追踪、监控、服务鉴权、服务路由、全链路灰度发布、API 自动上报。
-- 同时支持 gRPC 和 HTTP 协议，可以和JAVA Spring Cloud 服务互相调用。
-- 组件化，方便自定义扩展和插拔。
-- API 规范化，API 协议使用 Protobuf 定义接口，并且 Errors 通过 Enum 作为错误码，以实现错误判定。
+- 同时支持 gRPC 和 HTTP 协议，并可以和JAVA Spring Cloud 服务互相调用。
+- 开放性高，丰富的Middlewares、Options可以自定义组件
+- 一切围绕 Protobuf 定义Service、Interface、Error、Validating、Swagger json等
+- 拥抱开源规范，Trace，Validate，API Definition等都直接使用开源SDK
+- 可以支持私有化部署
   
 # Quick Start
 ##安装依赖
@@ -106,6 +108,7 @@ func main() {
         kratos.Server(grpcSrv),
     }
     // 添加tsf应用默认启动配置
+    // 如果不想启用服务注册，可以加入tsf.EnableReigstry(false)该Option
     opts = append(opts, tsf.AppOptions()...)
     app := kratos.New(opts...)
     // 应用阻塞式启动
@@ -185,6 +188,20 @@ CMD ["sh", "-ec", "exec ${workdir}provider ${JAVA_OPTS}"]
 #### 4. 部署应用
 参考文档[TSF部署组](https://cloud.tencent.com/document/product/649/15525)
 
-# 更多文档和Examples
-- [文档](/docs/)
-- [Examples](/examples/)
+# 更多文档
+- [HTTP Restful开发](/docs/HTTP.md)
+- [TSF远程配置](/docs/Config.md)
+- [Swagger API上报]()
+- [错误定义](/docs/Error.md)
+- [分布式调用链追踪](/docs/Trace.md)
+- [自定义标签](/docs/Metadata.md)
+- [负载均衡](/docs/Balancer.md)
+- [自适应熔断](/docs/Breaker.md)
+# Examples
+- [gRPC](/examples/helloworld/grpc)
+- [HTTP](/examples/helloworld/http)
+- [gin-go](/examples/helloworld/gin)
+- [log](/examples/log)
+- [error](/examples/error)
+- [tracing](/examples/tracing)
+- [breaker](/examples/breaker)
