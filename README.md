@@ -18,9 +18,11 @@ tsf-go基于开源[go-kratos](https://github.com/go-kratos/kratos)框架为用�
 - windows通过下载可执行程序或者其他安装程序来安装
 
 #### 2.安装 protoc-gen-xxx
+```bash
 go get -u github.com/golang/protobuf/protoc-gen-go
 go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
 go get -u github.com/go-kratos/kratos/cmd/protoc-gen-go-http
+```
 ## 服务端开发
 #### 1.通过protobuf定义服务接口
 ```protobuf
