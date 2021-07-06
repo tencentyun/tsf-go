@@ -68,17 +68,17 @@ func (b *Builder) Build(info base.PickerBuildInfo) balancer.Picker {
 	}
 	for conn, info := range info.ReadySCs {
 		metadata := make(map[string]string)
-		metadata["protocol"] = info.Address.Attributes.Value("protocol").(string)
-		metadata["tsf_status"] = info.Address.Attributes.Value("tsf_status").(string)
-		metadata["tsf_tags"] = info.Address.Attributes.Value("tsf_tags").(string)
-		metadata["TSF_APPLICATION_ID"] = info.Address.Attributes.Value("TSF_APPLICATION_ID").(string)
-		metadata["TSF_GROUP_ID"] = info.Address.Attributes.Value("TSF_GROUP_ID").(string)
-		metadata["TSF_INSTNACE_ID"] = info.Address.Attributes.Value("TSF_INSTNACE_ID").(string)
-		metadata["TSF_PROG_VERSION"] = info.Address.Attributes.Value("TSF_PROG_VERSION").(string)
-		metadata["TSF_ZONE"] = info.Address.Attributes.Value("TSF_ZONE").(string)
-		metadata["TSF_REGION"] = info.Address.Attributes.Value("TSF_REGION").(string)
-		metadata["TSF_NAMESPACE_ID"] = info.Address.Attributes.Value("TSF_NAMESPACE_ID").(string)
-		metadata["TSF_SDK_VERSION"] = info.Address.Attributes.Value("TSF_SDK_VERSION").(string)
+		metadata["protocol"], _ = info.Address.Attributes.Value("protocol").(string)
+		metadata["tsf_status"], _ = info.Address.Attributes.Value("tsf_status").(string)
+		metadata["tsf_tags"], _ = info.Address.Attributes.Value("tsf_tags").(string)
+		metadata["TSF_APPLICATION_ID"], _ = info.Address.Attributes.Value("TSF_APPLICATION_ID").(string)
+		metadata["TSF_GROUP_ID"], _ = info.Address.Attributes.Value("TSF_GROUP_ID").(string)
+		metadata["TSF_INSTNACE_ID"], _ = info.Address.Attributes.Value("TSF_INSTNACE_ID").(string)
+		metadata["TSF_PROG_VERSION"], _ = info.Address.Attributes.Value("TSF_PROG_VERSION").(string)
+		metadata["TSF_ZONE"], _ = info.Address.Attributes.Value("TSF_ZONE").(string)
+		metadata["TSF_REGION"], _ = info.Address.Attributes.Value("TSF_REGION").(string)
+		metadata["TSF_NAMESPACE_ID"], _ = info.Address.Attributes.Value("TSF_NAMESPACE_ID").(string)
+		metadata["TSF_SDK_VERSION"], _ = info.Address.Attributes.Value("TSF_SDK_VERSION").(string)
 
 		si := &registry.ServiceInstance{
 			Name:      info.Address.ServerName,
