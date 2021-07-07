@@ -1,14 +1,16 @@
 
-tsf-go基于开源[go-kratos](https://github.com/go-kratos/kratos)框架为用户现存的 Go 应用提供了接入TSF（[腾讯云微服务治理平台](https://cloud.tencent.com/document/product/649)）治理平台的能力。
+[TSF-Go](https://github.com/tencentyun/tsf-go)基于轻量级 Go 微服务框架[Kratos](https://github.com/go-kratos/kratos)为用户现存的 Go 应用提供了接入TSF（[腾讯云微服务治理平台](https://cloud.tencent.com/document/product/649)）治理平台的能力。
+
+> 您也可以通过 [SDK文档](https://github.com/tencentyun/tsf-go) 查看 TSF GO 最新使用说明。
 
 # 功能特性
 - 自动集成 TSF 平台治理能力：分布式远程配置、远程日志、分布式调用链追踪、监控、服务鉴权、服务路由、全链路灰度发布、API 自动上报。
 - 同时支持 gRPC 和 HTTP 协议，并可以和JAVA Spring Cloud 服务互相调用。
 - 开放性高，丰富的Middlewares、Options可以自定义组件
 - 一切围绕 Protobuf 定义Service、Interface、Error、Validating、Swagger json等
-- 拥抱开源规范，Trace，Validate，API Definition等都直接使用开源SDK
+- 拥抱开源规范，Trace，Validate，API Definition等都直接使用开源规范和协议
 - 可以支持私有化部署
-  
+
 # Quick Start
 ##安装依赖
 #### 1.安装 protoc v3.15.0+
@@ -191,19 +193,19 @@ CMD ["sh", "-ec", "exec ${workdir}provider ${JAVA_OPTS}"]
 参考文档[TSF部署组](https://cloud.tencent.com/document/product/649/15525)
 
 # 更多文档
-- [HTTP Restful开发](/docs/HTTP.md)
-- [TSF远程配置](/docs/Config.md)
+- [HTTP Restful开发](https://github.com/tencentyun/tsf-go/blob/master/docs/HTTP.md)
+- [TSF远程配置](https://github.com/tencentyun/tsf-go/blob/master/docs/Config.md)
 - [Swagger API上报]()
-- [错误定义](/docs/Error.md)
-- [分布式调用链追踪](/docs/Trace.md)
-- [自定义标签](/docs/Metadata.md)
-- [负载均衡](/docs/Balancer.md)
-- [自适应熔断](/docs/Breaker.md)
+- [错误定义](https://github.com/tencentyun/tsf-go/blob/master/docs/Error.md)
+- [分布式调用链追踪](https://github.com/tencentyun/tsf-go/blob/master/docs/Trace.md)
+- [自定义标签](https://github.com/tencentyun/tsf-go/blob/master/docs/Metadata.md)
+- [负载均衡](https://github.com/tencentyun/tsf-go/blob/master/docs/Balancer.md)
+- [自适应熔断](https://github.com/tencentyun/tsf-go/blob/master/docs/Breaker.md)
 # Examples
-- [gRPC](/examples/helloworld/grpc)
-- [HTTP](/examples/helloworld/http)
-- [gin-go](/examples/helloworld/gin)
-- [log](/examples/log)
-- [error](/examples/error)
-- [tracing](/examples/tracing)
-- [breaker](/examples/breaker)
+- [gRPC](https://github.com/tencentyun/tsf-go/blob/master/examples/helloworld/grpc)
+- [HTTP](https://github.com/tencentyun/tsf-go/blob/master/examples/helloworld/http)
+- [gin-go](https://github.com/tencentyun/tsf-go/blob/master/examples/helloworld/gin)
+- [log](https://github.com/tencentyun/tsf-go/blob/master/examples/log)
+- [error](https://github.com/tencentyun/tsf-go/blob/master/examples/error)
+- [tracing](https://github.com/tencentyun/tsf-go/blob/master/examples/tracing)
+- [breaker](https://github.com/tencentyun/tsf-go/blob/master/examples/breaker)
