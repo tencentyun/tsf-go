@@ -74,7 +74,7 @@ func (s Span) SetError(err error) {
 	}
 	var code = 200
 	if err != nil {
-		code = errors.FromError(err).StatusCode()
+		code = int(errors.FromError(err).GetCode())
 		s.span.RecordError(err)
 		s.span.SetStatus(codes.Error, err.Error())
 		s.span.SetAttributes(attribute.String("exception", err.Error()))

@@ -91,7 +91,7 @@ func recordError(ctx context.Context, err error) {
 	span := trace.SpanFromContext(ctx)
 	var code = 200
 	if err != nil {
-		code = errors.FromError(err).StatusCode()
+		code = int(errors.FromError(err).GetCode())
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		span.SetAttributes(attribute.String("exception", err.Error()))
