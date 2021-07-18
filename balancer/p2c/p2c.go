@@ -258,7 +258,7 @@ func (p *P2cPicker) Pick(ctx context.Context, nodes []naming.Instance) (*naming.
 				if p.errHandler(di.Err) {
 					success = 0
 				}
-			} else if errors.Is(context.DeadlineExceeded, di.Err) || errors.Is(context.Canceled, di.Err) || errors.FromError(di.Err).StatusCode() >= 500 {
+			} else if errors.Is(context.DeadlineExceeded, di.Err) || errors.Is(context.Canceled, di.Err) || errors.FromError(di.Err).Code >= 500 {
 				success = 0
 			}
 		}

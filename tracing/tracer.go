@@ -135,7 +135,7 @@ func (t *Tracer) Start(ctx context.Context, component string, operation string, 
 func (t *Tracer) End(ctx context.Context, span trace.Span, err error) {
 	var code = 200
 	if err != nil {
-		code = errors.FromError(err).StatusCode()
+		code = int(errors.FromError(err).Code)
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		span.SetAttributes(attribute.String("exception", err.Error()))

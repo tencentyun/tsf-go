@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/gin-gonic/gin v1.7.2
-	github.com/go-kratos/kratos/v2 v2.0.0-rc7
+	github.com/go-kratos/kratos/v2 v2.0.0
 	github.com/go-redis/redis/v8 v8.11.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/luna-duclos/instrumentedsql v1.1.3

@@ -37,7 +37,7 @@ func BreakerMiddleware(opts ...ClientOption) middleware.Middleware {
 									breaker.MarkFailed()
 									return
 								}
-							} else if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || errors.FromError(err).StatusCode() >= 500 {
+							} else if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || errors.FromError(err).GetCode() >= 500 {
 								breaker.MarkFailed()
 								return
 							}

@@ -42,7 +42,7 @@ func serverMetricsMiddleware() middleware.Middleware {
 			defer func() {
 				var code = 200
 				if err != nil {
-					code = errors.FromError(err).StatusCode()
+					code = int(errors.FromError(err).GetCode())
 				}
 				stat.Record(code)
 			}()
@@ -67,7 +67,7 @@ func clientMetricsMiddleware() middleware.Middleware {
 			defer func() {
 				var code = 200
 				if err != nil {
-					code = errors.FromError(err).StatusCode()
+					code = int(errors.FromError(err).GetCode())
 				}
 				stat.Record(code)
 			}()
