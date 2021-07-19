@@ -46,7 +46,7 @@ message HelloReply {
 #### 2.生成服务端桩代码xxx.pb.go代码
 通过protoc命令生成服务代码(http协议)
 `protoc --proto_path=. --proto_path=./third_party
---go_out=paths=source_relative:. --go-http_out=paths=source_relative:.  *.proto`
+--go_out=paths=source_relative:. --go_out=paths=source_relative:. --go-http_out=paths=source_relative:.  *.proto`
 - 如果没有定义google.api.http，但仍想生成xxx_http.pb.go代码，则生成时需要加上参数--go-http_opt=omitempty=false
 - 注意需要将proto依赖的[third_party](https://github.com/tencentyun/tsf-go/tree/master/third_party)下载至您的项目中，并替换成实际路径
 #### 3.编写service实现层代码

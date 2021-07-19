@@ -23,7 +23,9 @@
 ```bash
 go get -u github.com/golang/protobuf/protoc-gen-go
 go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
-go get -u github.com/go-kratos/kratos/cmd/protoc-gen-go-http
+go install github.com/go-kratos/kratos/cmd/protoc-gen-go-http/v2
+//如果是go 1.16版本需要加@latest
+//go install github.com/go-kratos/kratos/cmd/protoc-gen-go-http/v2@latest
 ```
 ## 服务端开发
 #### 1.通过protobuf定义服务接口

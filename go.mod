@@ -6,7 +6,7 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/fullstorydev/grpcurl v1.8.1
 	github.com/gin-gonic/gin v1.7.2
-	github.com/go-kratos/kratos/v2 v2.0.0
+	github.com/go-kratos/kratos/v2 v2.0.1
 	github.com/go-kratos/swagger-api v0.1.7
 	github.com/go-playground/validator/v10 v10.6.1 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
