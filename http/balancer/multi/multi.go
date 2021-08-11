@@ -33,7 +33,7 @@ func (b *Balancer) Pick(ctx context.Context) (node *registry.ServiceInstance, do
 	b.lock.RLock()
 	nodes := b.nodes
 	b.lock.RUnlock()
-	svc := naming.NewService(meta.Sys(ctx, meta.DestKey(meta.ServiceName)).(string), meta.Sys(ctx, meta.DestKey(meta.ServiceNamespace)).(string))
+	svc := naming.NewService(meta.Sys(ctx, meta.DestKey(meta.ServiceNamespace)).(string), meta.Sys(ctx, meta.DestKey(meta.ServiceName)).(string))
 	if len(nodes) == 0 {
 		log.DefaultLog.Errorf("picker: ErrNoSubConnAvailable! %s", svc.Name)
 		return nil, nil, fmt.Errorf("no instances avaiable")
