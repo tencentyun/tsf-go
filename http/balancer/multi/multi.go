@@ -36,13 +36,13 @@ func (b *Balancer) Pick(ctx context.Context) (node *registry.ServiceInstance, do
 	svc := naming.NewService(meta.Sys(ctx, meta.DestKey(meta.ServiceNamespace)).(string), meta.Sys(ctx, meta.DestKey(meta.ServiceName)).(string))
 	if len(nodes) == 0 {
 		log.DefaultLog.Errorf("picker: ErrNoSubConnAvailable! %s", svc.Name)
-		return nil, nil, fmt.Errorf("no instances avaiable")
+		return nil, nil, fmt.Errorf("no instances available")
 	}
 	log.DefaultLog.Debugw("msg", "picker pick", "svc", svc, "nodes", nodes)
 	filters := b.r.Select(ctx, *svc, nodes)
 	if len(filters) == 0 {
 		log.DefaultLog.Errorf("picker: ErrNoSubConnAvailable after route filter!  %s", svc.Name)
-		return nil, nil, fmt.Errorf("no instances avaiable")
+		return nil, nil, fmt.Errorf("no instances available")
 	}
 	ins, _ := b.b.Pick(ctx, filters)
 	span := zipkin.SpanFromContext(ctx)
