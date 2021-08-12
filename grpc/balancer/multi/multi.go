@@ -101,7 +101,7 @@ type Picker struct {
 
 // Pick pick instances
 func (p *Picker) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
-	svc := naming.NewService(meta.Sys(info.Ctx, meta.DestKey(meta.ServiceName)).(string), meta.Sys(info.Ctx, meta.DestKey(meta.ServiceNamespace)).(string))
+	svc := naming.NewService(meta.Sys(info.Ctx, meta.DestKey(meta.ServiceNamespace)).(string), meta.Sys(info.Ctx, meta.DestKey(meta.ServiceName)).(string))
 	log.DefaultLog.Debugw("msg", "picker pick", "svc", svc, "nodes", p.instances)
 
 	nodes := p.r.Select(info.Ctx, *svc, p.instances)
