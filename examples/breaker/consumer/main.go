@@ -27,7 +27,7 @@ func callHTTP() {
 	// tsf breaker middleware 默认error code大于等于500才认为出错并MarkFailed
 	// 这里我们改成大于400就认为出错
 	errHook := func(ctx context.Context, operation string, err error) (success bool) {
-		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || errors.FromError(err).StatusCode() > 400 {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || errors.FromError(err).GetCode() > 400 {
 			return false
 		}
 		return true

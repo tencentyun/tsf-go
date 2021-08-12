@@ -119,7 +119,7 @@ func (s *Server) handle(ctx context.Context, req interface{}, info *grpc.UnarySe
 	defer func() {
 		var code = 200
 		if err != nil {
-			code = errors.FromError(err).StatusCode()
+			code = int(errors.FromError(err).GetCode())
 			span.Tag("exception", err.Error())
 		}
 		span.Tag("resultStatus", strconv.FormatInt(int64(code), 10))
@@ -149,7 +149,7 @@ func (s *Server) handleStream(srv interface{}, stream grpc.ServerStream, info *g
 	defer func() {
 		var code = 200
 		if err != nil {
-			code = errors.FromError(err).StatusCode()
+			code = int(errors.FromError(err).GetCode())
 			span.Tag("exception", err.Error())
 		}
 		span.Tag("resultStatus", strconv.FormatInt(int64(code), 10))

@@ -82,7 +82,7 @@ func (c *Conn) handle(ctx context.Context, method string, req, reply interface{}
 	defer func() {
 		var code = 200
 		if err != nil {
-			code = errors.FromError(err).StatusCode()
+			code = int(errors.FromError(err).GetCode())
 		}
 		stat.Record(code)
 		span := zipkin.SpanFromContext(ctx)
@@ -107,7 +107,7 @@ func (c *Conn) handleStream(ctx context.Context, desc *grpc.StreamDesc, cc *grpc
 	defer func() {
 		var code = 200
 		if err != nil {
-			code = errors.FromError(err).StatusCode()
+			code = int(errors.FromError(err).GetCode())
 		}
 		stat.Record(code)
 		span := zipkin.SpanFromContext(ctx)

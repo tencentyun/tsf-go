@@ -199,7 +199,7 @@ CMD ["sh", "-ec", "exec ${workdir}provider ${JAVA_OPTS}"]
 # 更多文档
 - [HTTP Restful开发](https://github.com/tencentyun/tsf-go/blob/master/docs/HTTP.md)
 - [TSF远程配置](https://github.com/tencentyun/tsf-go/blob/master/docs/Config.md)
-- [Swagger API上报]()
+- [Swagger API上报](https://github.com/tencentyun/tsf-go/blob/master/docs/Swagger.md)
 - [错误定义](https://github.com/tencentyun/tsf-go/blob/master/docs/Error.md)
 - [分布式调用链追踪](https://github.com/tencentyun/tsf-go/blob/master/docs/Trace.md)
 - [自定义标签](https://github.com/tencentyun/tsf-go/blob/master/docs/Metadata.md)

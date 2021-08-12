@@ -95,7 +95,7 @@ func SetProvider(opts ...Option) {
 
 func init() {
 	SetProvider()
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, b3.B3{}))
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, b3.New()))
 }
 
 // Tracer is otel span tracer
