@@ -147,8 +147,8 @@ github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2
 github.com/go-kratos/grpc-gateway/v2 v2.5.1-0.20210811062259-c92d36e434b1 h1:jPqlxMJEoi8Yv4WIAhQNKczdKjADox8WKrTp3bJNjFM=
 github.com/go-kratos/grpc-gateway/v2 v2.5.1-0.20210811062259-c92d36e434b1/go.mod h1:qV5/s5A7wfY7GkNzptcUFRGAG4Y8H4mlXpSrOkDEIk0=
 github.com/go-kratos/kratos/v2 v2.0.3/go.mod h1:Hgl0YPry9YyLtwTTfwLfowPKg+YS0dgZ06O5NHqz5hE=
-github.com/go-kratos/kratos/v2 v2.0.4 h1:+4Y0bK18EB6sucbFoNs3pKW2neuUd6+7ZzrmPcvar7A=
-github.com/go-kratos/kratos/v2 v2.0.4/go.mod h1:pl/qF1XBL9qQfu7+kEVV+Cg7Zx1u8jIiWxVpaLx6X5k=
+github.com/go-kratos/kratos/v2 v2.0.5 h1:PiXoXLNs8CsCdTtYIS8NQQQp1ZVwE2o/gKJlkAbBjfs=
+github.com/go-kratos/kratos/v2 v2.0.5/go.mod h1:pl/qF1XBL9qQfu7+kEVV+Cg7Zx1u8jIiWxVpaLx6X5k=
 github.com/go-kratos/swagger-api v1.0.1 h1:zBagw2tWA+icYrRPFqM3jFL60nO743ZiIvuiI6CpV6E=
 github.com/go-kratos/swagger-api v1.0.1/go.mod h1:KMYylgeNaApBgPYIF6kIP1kjGFgI4aDQNbQNBTqaewI=
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
